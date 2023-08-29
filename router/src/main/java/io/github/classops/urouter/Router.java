@@ -1,0 +1,455 @@
+package io.github.classops.urouter;
+
+import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.app.Application;
+import android.content.Context;
+import android.content.Intent;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
+
+import androidx.activity.ComponentActivity;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContract;
+import androidx.annotation.AnyThread;
+import androidx.annotation.MainThread;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.WorkerThread;
+import androidx.collection.ArrayMap;
+import androidx.core.app.ActivityCompat;
+import androidx.fragment.app.Fragment;
+
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+
+import io.github.classops.urouter.interceptor.RealInterceptorChain;
+import io.github.classops.urouter.result.RouterActivityResultLauncher;
+import io.github.classops.urouter.route.IRouteTable;
+import io.github.classops.urouter.route.IServiceTable;
+import io.github.classops.urouter.route.ParamType;
+import io.github.classops.urouter.route.RouteInfo;
+import io.github.classops.urouter.route.RouteType;
+import io.github.classops.urouter.service.ServiceLoader;
+
+/**
+ * Router
+ *
+ * @author wangmingshuo
+ * @since 2022/11/17 19:12
+ */
+public class Router {
+
+    @SuppressLint("StaticFieldLeak")
+    private static volatile Router sRouter;
+
+    private Context context;
+    @NonNull
+    private final Map<String, RouteInfo> routeTables = new ArrayMap<>();
+    private final Map<Class<?>, Injector> injectorMap = new ArrayMap<>();
+    // 路径 到 接口Class 的映射
+    private final Map<String, RouteInfo> serviceMap = new ArrayMap<>();
+    private final List<Interceptor> interceptors = new ArrayList<>();
+    private final ServiceLoader serviceLoader = new ServiceLoader();
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private final Executor executor;
+
+    public Router() {
+        this.executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
+    }
+
+    public static Router get() {
+        if (sRouter == null) {
+            synchronized (Router.class) {
+                if (sRouter == null) {
+                    sRouter = new Router();
+                }
+            }
+        }
+        return sRouter;
+    }
+
+    public void init(@NonNull Application application) {
+        this.context = application;
+        // 初始化工作
+        // map 处理 path 匹配
+        loadRouter();
+    }
+
+    private void loadRouter() {
+        // 初始化加载路由表
+        try {
+            Class<?> clazz = Class.forName("io.github.classops.urouter.init.RouteInit");
+            Method m = clazz.getMethod("load", Router.class);
+            m.invoke(null, this);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void log() {
+        for (String s : routeTables.keySet()) {
+            Log.d("router", "path: " + s + ", route: " + routeTables.get(s));
+        }
+    }
+
+    public void register(@Nullable String className) {
+        if (className == null) return;
+        try {
+            Class<?> clazz = Class.forName(className);
+            Object obj = clazz.getConstructor().newInstance();
+            if (obj instanceof IRouteTable) {
+                registerTable((IRouteTable) obj);
+            } else if (obj instanceof IServiceTable) {
+                registerService((IServiceTable) obj);
+            } else {
+                Log.d("Router", "unknown type!");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void registerTable(@Nullable IRouteTable route) {
+        if (route != null) {
+            route.load(routeTables);
+        }
+    }
+
+    public void registerService(@Nullable IServiceTable route) {
+        if (route != null) {
+            route.load(serviceMap);
+        }
+    }
+
+    public void register(@NonNull String path, @NonNull RouteInfo routeInfo) {
+        routeTables.put(path, routeInfo);
+        if (routeInfo.getType() == RouteType.SERVICE) {
+            serviceMap.put(routeInfo.getClazz().getName(), routeInfo);
+        }
+    }
+
+    public Context getContext() {
+        return this.context;
+    }
+
+    public List<Interceptor> getInterceptors() {
+        return interceptors;
+    }
+
+    public Executor getExecutor() {
+        return executor;
+    }
+
+    /**
+     * 获取参数注入的实现类
+     *
+     * @param targetClazz 注入目标的Activity/Fragment类
+     */
+    @Nullable
+    private Injector getInjector(Class<?> targetClazz) {
+        Injector injector = injectorMap.get(targetClazz);
+        if (injector != null) {
+            return injector;
+        }
+        try {
+            String injectClass = targetClazz.getCanonicalName() + "$$Router$$Injector";
+            Class<?> clazz = Class.forName(injectClass);
+            injector = (Injector) clazz.newInstance();
+            injectorMap.put(targetClazz, injector);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return injector;
+    }
+
+    public void inject(Object object) {
+        Injector injector = getInjector(object.getClass());
+        if (injector != null) {
+            injector.inject(object);
+        }
+    }
+
+    public void addInterceptor(Interceptor interceptor) {
+        this.interceptors.add(interceptor);
+    }
+
+    public UriRequest.Builder build(@NonNull String path) {
+        return new UriRequest.Builder(path);
+    }
+
+    public <T> ActivityResultLauncher<UriRequest> registerForResult(@NonNull ComponentActivity activity,
+                                                                    @NonNull ActivityResultContract<Intent, T> contract,
+                                                                    @NonNull ActivityResultCallback<T> callback) {
+
+        return new RouterActivityResultLauncher(activity,
+                activity.registerForActivityResult(contract, callback), callback);
+    }
+
+    public <T> ActivityResultLauncher<UriRequest> registerForResult(@NonNull Fragment fragment,
+                                                                    @NonNull ActivityResultContract<Intent, T> contract,
+                                                                    @NonNull ActivityResultCallback<T> callback) {
+        return new RouterActivityResultLauncher(fragment.requireContext(),
+                fragment.registerForActivityResult(contract, callback),
+                callback);
+    }
+
+    @AnyThread
+    @Nullable
+    public Object route(@Nullable final Context context, @NonNull final UriRequest request,
+                        @Nullable final NavigationCallback callback) {
+        if (request.isIgnoreInterceptor()) {
+            return routeInternal(context, request, callback);
+        } else {
+            this.executor.execute(new Runnable() {
+                @WorkerThread
+                @Override
+                public void run() {
+                    try {
+                        List<Interceptor> interceptors = new ArrayList<>(Router.this.interceptors);
+                        interceptors.add(new RouteInterceptor(context, callback));
+                        Interceptor.Chain chain = new RealInterceptorChain(0, interceptors, request);
+                        chain.proceed(request);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        if (callback != null) {
+                            runOnMainThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    callback.onInterrupt(request);
+                                }
+                            });
+                        }
+                    }
+                }
+            });
+            return null;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Nullable
+    public <T> T route(Class<? extends T> clazz) {
+        // 服务发现
+        RouteInfo routeInfo = serviceMap.get(clazz.getName());
+        if (routeInfo == null) return null;
+
+        return (T) serviceLoader.getService(routeInfo.getClazz());
+    }
+
+    @AnyThread
+    Object routeInternal(@Nullable Context context, @NonNull final UriRequest request,
+                         @Nullable final NavigationCallback callback) {
+        String path = request.getPath();
+        // 路径是空，直接返回
+        if (path == null) {
+            if (callback != null) {
+                runOnMainThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        callback.onLost(request);
+                    }
+                });
+            }
+            return null;
+        }
+        RouteInfo routeInfo = routeTables.get(request.getPath());
+        // 未找到路由信息
+        int routeType = request.getRouteType();
+        if (routeInfo == null || (routeType != RouteType.UNKNOWN && routeInfo.getType() != routeType)) {
+            if (callback != null) {
+                runOnMainThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        callback.onLost(request);
+                    }
+                });
+            }
+            return null;
+        }
+        if (callback != null) {
+            runOnMainThread(new Runnable() {
+                @Override
+                public void run() {
+                    callback.onFound(request);
+                }
+            });
+        }
+        return routeInternal(context != null ? context : this.context, request, routeInfo, callback);
+    }
+
+    @AnyThread
+    @SuppressLint("WrongConstant")
+    Object routeInternal(@NonNull final Context context, @NonNull final UriRequest request,
+                         @NonNull RouteInfo routeInfo, @Nullable final NavigationCallback callback) {
+        switch (routeInfo.getType()) {
+            case RouteType.ACTIVITY:
+                // Activity
+                final Intent intent = new Intent(context, routeInfo.getClazz());
+                Bundle extras = getExtras(request, routeInfo);
+                intent.putExtras(extras);
+                intent.setFlags(request.getFlags());
+                if (!(context instanceof Activity)) {
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                }
+                if (request.isStartActivity()) {
+                    runOnMainThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            routeActivity(context, intent, request);
+                            if (callback != null) {
+                                callback.onArrival(request);
+                            }
+                        }
+                    });
+                }
+                return intent;
+
+            case RouteType.FRAGMENT:
+                return routeFragment(context, request, routeInfo);
+
+            case RouteType.SERVICE:
+                return routeService(context, request, routeInfo);
+        }
+        return null;
+    }
+
+    @Nullable
+    Intent routeIntent(@NonNull Context context, @NonNull UriRequest request) {
+        String path = request.getPath();
+        // 路径是空，直接返回
+        if (path == null) {
+            return null;
+        }
+        RouteInfo routeInfo = routeTables.get(request.getPath());
+        // 未找到路由信息
+        if (routeInfo == null) {
+            return null;
+        }
+        if (routeInfo.getType() != RouteType.ACTIVITY) {
+            return null;
+        }
+
+        Intent intent = new Intent(context, routeInfo.getClazz());
+        Bundle extras = getExtras(request, routeInfo);
+        intent.putExtras(extras);
+        return intent;
+    }
+
+
+    @MainThread
+    private void routeActivity(@NonNull Context context, @NonNull Intent intent, @NonNull UriRequest request) {
+        if (context instanceof Activity) {
+            Activity activity = (Activity) context;
+            if (request.getRequestCode() >= 0) {
+                ActivityCompat.startActivityForResult(activity, intent, request.getRequestCode(),
+                        request.getActivityOptions());
+            } else {
+                ActivityCompat.startActivity(activity, intent, request.getActivityOptions());
+            }
+            if (request.getEnterAnim() != -1 && request.getExitAnim() != -1) {
+                activity.overridePendingTransition(request.getEnterAnim(), request.getExitAnim());
+            }
+        } else {
+            ActivityCompat.startActivity(context, intent, request.getActivityOptions());
+        }
+    }
+
+    private Object routeFragment(@NonNull Context context, @NonNull UriRequest request,
+                                 @NonNull RouteInfo routeInfo) {
+        Class<?> clazz = routeInfo.getClazz();
+        try {
+            Object fragment = clazz.getConstructor().newInstance();
+            Bundle extras = getExtras(request, routeInfo);
+            // set arguments
+            if (fragment instanceof android.app.Fragment) {
+                ((android.app.Fragment) fragment).setArguments(extras);
+            } else if (fragment instanceof androidx.fragment.app.Fragment) {
+                ((androidx.fragment.app.Fragment) fragment).setArguments(extras);
+            }
+            return fragment;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private Object routeService(@NonNull Context context, @NonNull UriRequest request,
+                                @NonNull RouteInfo routeInfo) {
+        Class<?> clazz = routeInfo.getClazz();
+        return serviceLoader.getService(clazz);
+    }
+
+    private void runOnMainThread(Runnable runnable) {
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            runnable.run();
+        } else {
+            handler.post(runnable);
+        }
+    }
+
+    @NonNull
+    private Bundle getExtras(@NonNull UriRequest request, @NonNull RouteInfo routeInfo) {
+        Injector injector = getInjector(routeInfo.getClazz());
+        Bundle extras;
+        if (injector != null) {
+            extras = injector.query(request, routeInfo);
+        } else {
+            extras = request.getExtras();
+        }
+        return extras;
+    }
+
+    private void addParam(Bundle extras, String key, String value, int paramType) {
+        try {
+            switch (paramType) {
+                case ParamType.BOOLEAN:
+                    extras.putBoolean(key, Boolean.parseBoolean(value));
+                    break;
+
+                case ParamType.BYTE:
+                    extras.putByte(key, Byte.parseByte(value));
+                    break;
+
+                case ParamType.SHORT:
+                    extras.putShort(key, Short.parseShort(value));
+                    break;
+
+                case ParamType.INT:
+                    extras.putInt(key, Integer.parseInt(value));
+                    break;
+
+                case ParamType.LONG:
+                    extras.putLong(key, Long.parseLong(value));
+                    break;
+
+                case ParamType.CHAR:
+                    extras.putChar(key, value.charAt(0));
+                    break;
+
+                case ParamType.FLOAT:
+                    extras.putFloat(key, Float.parseFloat(value));
+                    break;
+
+                case ParamType.DOUBLE:
+                    extras.putDouble(key, Double.parseDouble(value));
+                    break;
+
+                default:
+                    // PARCELABLE/SERIALIZABLE/OBJECT/STRING 直接使用String
+                    extras.putString(key, value);
+                    break;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+}
