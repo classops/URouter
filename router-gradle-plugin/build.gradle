@@ -2,10 +2,13 @@ plugins {
     id 'java-gradle-plugin'
     id 'org.jetbrains.kotlin.jvm' version '1.6.21'
     id 'maven-publish'
+    id 'signing'
 }
 
 group 'io.github.classops.urouter'
 version '0.2.97'
+
+apply from: '../maven-publish.gradle'
 
 repositories {
     mavenCentral()
@@ -46,18 +49,4 @@ jar {
 
 tasks.withType(GenerateModuleMetadata) {
     enabled = false
-}
-
-publishing {
-
-    publications {
-        mavenJava(MavenPublication) {
-            from components.java
-        }
-    }
-
-    repositories {
-        mavenLocal()
-    }
-
 }

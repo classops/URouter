@@ -1,0 +1,59 @@
+publishing {
+    publications {
+        release(MavenPublication) {
+            pom {
+                name = project.name
+                description = 'URouter'
+                url = 'https://github.com/classops/URouter'
+
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id = 'classops'
+                        name = 'ClassOps'
+                        email = 'ClassOps@163.com'
+                    }
+                }
+
+                // scm
+                scm {
+                    connection = 'https://github.com/classops/URouter.git'
+                    developerConnection = 'https://github.com/classops/URouter.git'
+                    url = 'https://github.com/classops/URouter'
+                }
+            }
+
+            if (plugins.hasPlugin('com.android.library')) {
+                afterEvaluate {
+                    from components.release
+                }
+            } else {
+                from components.java
+            }
+        }
+    }
+
+//    repositories {
+//        mavenLocal()
+//    }
+
+    repositories {
+        maven {
+            url "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
+            credentials {
+                username project.sonaUsername // sonatype username
+                password project.sonaPassword // sonatype password
+            }
+        }
+    }
+}
+
+signing {
+    sign publishing.publications.release
+}
