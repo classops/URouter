@@ -5,7 +5,6 @@ import javax.annotation.processing.Filer;
 import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ModuleElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
@@ -15,7 +14,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
-import java.util.Set;
 
 public abstract class BaseProcessor extends AbstractProcessor {
 
@@ -47,19 +45,9 @@ public abstract class BaseProcessor extends AbstractProcessor {
                 mTypeUtils.getWildcardType(null, null));
         Map<String, String> options = processingEnv.getOptions();
         options.forEach((key, value) -> {
-            System.out.println("option key: " + key + ", value: " + value);
+            mMessager.printMessage(Diagnostic.Kind.NOTE, "option key:" + key + ", value: " + value);
         });
-        Set<? extends ModuleElement> modules = mElementUtils.getAllModuleElements();
-        if (modules == null || modules.isEmpty()) {
-            System.out.println("module: empty");
-        } else {
-            for (ModuleElement module : modules) {
-                System.out.println("module: " + module.getQualifiedName() + ", name: " + module.getSimpleName());
-            }
-        }
         this.mProjectName = getProjectName();
-
-        System.out.println("project name: " + this.mProjectName);
     }
 
     String getProjectName() {

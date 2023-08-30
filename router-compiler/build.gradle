@@ -5,9 +5,12 @@ plugins {
 }
 
 group 'io.github.classops.urouter'
-version '0.1.85'
+version '1.0.0'
 
 apply from: '../maven-publish.gradle'
+
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
 
 repositories {
     mavenCentral()

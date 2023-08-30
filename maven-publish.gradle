@@ -1,3 +1,21 @@
+def isAar = plugins.hasPlugin('com.android.library')
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    if (isAar) {
+        from android.sourceSets.main.java.srcDirs
+    } else {
+        from sourceSets.main.allSource
+    }
+}
+
+if (!isAar) {
+    task javadocJar(type: Jar) {
+        classifier = 'javadoc'
+        from javadoc.destinationDir
+    }
+}
+
 publishing {
     publications {
         release(MavenPublication) {
@@ -30,10 +48,16 @@ publishing {
             }
 
             if (plugins.hasPlugin('com.android.library')) {
+                // 发布源码 JAR
+                artifact sourcesJar
                 afterEvaluate {
                     from components.release
                 }
             } else {
+                // 发布文档 JAR
+                artifact javadocJar
+                // 发布源码 JAR
+                artifact sourcesJar
                 from components.java
             }
         }
