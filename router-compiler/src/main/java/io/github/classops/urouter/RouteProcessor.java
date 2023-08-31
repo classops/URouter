@@ -60,85 +60,89 @@ public class RouteProcessor extends BaseProcessor {
         if (annotations.isEmpty()) {
             return false;
         }
-        Set<? extends Element> list = roundEnv.getElementsAnnotatedWith(Route.class);
-        if (list == null || list.isEmpty()) {
+        Set<? extends Element> elements = roundEnv.getElementsAnnotatedWith(Route.class);
+        if (elements == null || elements.isEmpty()) {
             return false;
         }
 
         Map<String, RouteItem> routes = new HashMap<>();
-        for (Element element : list) {
-            PackageElement pe = mElementUtils.getPackageOf(element);
-            if (element.getKind() == ElementKind.CLASS) {
-                TypeElement typeElement = (TypeElement) element;
-                Route route = typeElement.getAnnotation(Route.class);
-                System.out.println("Route path: " + route.path() + ", alias: " + Arrays.toString(route.alias()));
-
-                // 获取参数信息，字段名 和 类型
-                List<? extends Element> members = mElementUtils.getAllMembers(typeElement);
-                Map<String, Integer> paramsType;
-                if (members != null) {
-                    paramsType = new HashMap<>();
-                    // element, field name, field type, param name, param type
-                    List<FieldInfo> fieldInfoList = new ArrayList<>();
-                    for (Element member : members) {
-                        if (member.getKind() == ElementKind.FIELD) {
-                            VariableElement varElement = (VariableElement) member;
-                            Param param = member.getAnnotation(Param.class);
-                            if (param != null) {
-                                TypeMirror typeMirror = varElement.asType();
-                                String fieldName = varElement.getSimpleName().toString();
-                                String paramName = param.name();
-                                if (StringUtils.isBlank(paramName)) {
-                                    paramName = fieldName;
-                                }
-
-                                System.out.println(getFieldType(varElement) + " " + element.getModifiers() +
-                                        " field: " + typeMirror + " " + varElement.getSimpleName() +
-                                        ", " + param.name() + ", desc: " + param.desc());
-
-                                FieldType fieldType = getFieldType(varElement);
-                                if (fieldType == FieldType.NOT_SUPPORT) {
-                                    mMessager.printMessage(Diagnostic.Kind.ERROR, "field is not supported! make field public, or add setter/getter.");
-                                }
-
-                                // check modifier
-                                /*
-                                if (MemberUtils.isStatic(element)) {
-                                    mMessager.printMessage(Diagnostic.Kind.ERROR, "must non-static member!");
-                                    return true;
-                                }
-
-                                if (MemberUtils.isFinal(element)) {
-                                    mMessager.printMessage(Diagnostic.Kind.ERROR, "must non-final member!");
-                                    return true;
-                                }
-                                */
-
-                                int paramType = getParamType(typeMirror);
-                                paramsType.put(paramName, getParamType(typeMirror));
-                                fieldInfoList.add(new FieldInfo(varElement, fieldType, paramName, paramType));
-                            }
-                        }
-                    }
-
-                    try {
-                        genInjectorJavaFile(typeElement, fieldInfoList);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                } else {
-                    paramsType = null;
-                }
-
-                byte routeType = getRouteType(typeElement.asType());
-                if (routeType != RouteType.UNKNOWN) {
-                    routes.put(route.path(), new RouteItem(routeType, typeElement, paramsType));
-                }
+        for (Element element : elements) {
+            if (element.getKind() != ElementKind.CLASS) {
+                continue;
             }
+
+            TypeElement typeElement = (TypeElement) element;
+            Route route = typeElement.getAnnotation(Route.class);
+            byte routeType = getRouteType(typeElement.asType());
+            if (routeType != RouteType.UNKNOWN) {
+                continue;
+            }
+
+            System.out.println("Route path: " + route.path() + ", alias: " + Arrays.toString(route.alias()));
+
+            // 获取参数信息，字段名 和 类型
+            List<? extends Element> members = mElementUtils.getAllMembers(typeElement);
+            Map<String, Integer> paramsType;
+            if (members != null) {
+                paramsType = new HashMap<>();
+                // element, field name, field type, param name, param type
+                List<FieldInfo> fieldInfoList = new ArrayList<>();
+                for (Element member : members) {
+                    if (member.getKind() == ElementKind.FIELD) {
+                        VariableElement varElement = (VariableElement) member;
+                        Param param = member.getAnnotation(Param.class);
+                        if (param == null) {
+                            continue;
+                        }
+
+                        TypeMirror typeMirror = varElement.asType();
+                        String fieldName = varElement.getSimpleName().toString();
+                        String paramName = param.name();
+                        if (StringUtils.isBlank(paramName)) {
+                            paramName = fieldName;
+                        }
+
+                        System.out.println(getFieldType(varElement) + " " + element.getModifiers() +
+                                " field: " + typeMirror + " " + varElement.getSimpleName() +
+                                ", " + param.name() + ", desc: " + param.desc());
+
+                        FieldType fieldType = getFieldType(varElement);
+                        if (fieldType == FieldType.NOT_SUPPORT) {
+                            mMessager.printMessage(Diagnostic.Kind.ERROR, "field is not supported! make field public, or add setter/getter.");
+                        }
+
+                        /*
+                        // check modifier
+                        if (MemberUtils.isStatic(element)) {
+                            mMessager.printMessage(Diagnostic.Kind.ERROR, "must non-static member!");
+                            return true;
+                        }
+
+                        if (MemberUtils.isFinal(element)) {
+                            mMessager.printMessage(Diagnostic.Kind.ERROR, "must non-final member!");
+                            return true;
+                        }
+                        */
+
+                        int paramType = getParamType(typeMirror);
+                        paramsType.put(paramName, getParamType(typeMirror));
+                        fieldInfoList.add(new FieldInfo(varElement, fieldType, paramName, paramType));
+                    }
+                }
+
+                try {
+                    genInjectorJavaFile(typeElement, fieldInfoList);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                paramsType = null;
+            }
+
+            routes.put(route.path(), new RouteItem(routeType, typeElement, paramsType));
         }
 
         try {
-            System.out.println("generate route table source file.");
             genTableJavaFile(routes);
             genServiceJavaFile(routes);
         } catch (IOException e) {

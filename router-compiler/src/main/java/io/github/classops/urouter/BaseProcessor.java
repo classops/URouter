@@ -43,10 +43,6 @@ public abstract class BaseProcessor extends AbstractProcessor {
         this.mSerializableType = mElementUtils.getTypeElement(SERIALIZABLE).asType();
         this.mListType = mTypeUtils.getDeclaredType(mElementUtils.getTypeElement(LIST),
                 mTypeUtils.getWildcardType(null, null));
-        Map<String, String> options = processingEnv.getOptions();
-        options.forEach((key, value) -> {
-            mMessager.printMessage(Diagnostic.Kind.NOTE, "option key:" + key + ", value: " + value);
-        });
         this.mProjectName = getProjectName();
     }
 
