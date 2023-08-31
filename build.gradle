@@ -2,7 +2,7 @@
 
 buildscript {
     dependencies {
-        classpath 'io.github.classops.urouter:router-gradle-plugin:0.2.97'
+        classpath 'io.github.classops.urouter:router-gradle-plugin:1.0.0'
     }
 }
 

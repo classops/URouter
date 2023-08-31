@@ -13,7 +13,7 @@ import io.github.classops.urouter.demo.module_a.service.TestService
  * @author wangmingshuo
  * @since 2023/04/07 17:18
  */
-@Route(path = "/service/test", alias = [])
+@Route(path = "/service/test")
 class TestServiceImpl(private val context: Context) : TestService {
     override fun log() {
         Log.e("Test", "test log: ${context}")

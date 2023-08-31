@@ -11,7 +11,6 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import io.github.classops.urouter.Router;
 import io.github.classops.urouter.annotation.Param;
@@ -22,7 +21,10 @@ import io.github.classops.urouter.demo.bean.PA;
 import io.github.classops.urouter.demo.bean.SA;
 
 
-@Route(path = "/test/test2")
+/**
+ * 测试 app 页面跳转、列表和对象参数、返回值
+ */
+@Route(path = "/test/test")
 public class SecondActivity extends AppCompatActivity {
 
     @Param
@@ -47,23 +49,14 @@ public class SecondActivity extends AppCompatActivity {
     public ArrayList<String> list;
 
     @Param
-    public List<A<B>> listA;
-
-    @Param
     public CharSequence seq;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         Router.get().inject(this);
-
-//        MyInjector injector = new MyInjector();
-//        injector.inject(this);
-
         setContentView(R.layout.activity_second);
         Toast.makeText(this, toast + ":" + progress + ", a = " + a, Toast.LENGTH_LONG)
-//        Toast.makeText(this, toast + ":" + progress, Toast.LENGTH_LONG)
                 .show();
 
         Log.e("Test", "list: " + TextUtils.join(",", list));

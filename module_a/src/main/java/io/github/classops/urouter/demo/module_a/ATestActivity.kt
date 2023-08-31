@@ -11,19 +11,20 @@ import io.github.classops.urouter.annotation.Param
 import io.github.classops.urouter.annotation.Route
 import io.github.classops.urouter.demo.module_a.service.TestService
 
-@Route(path = "/test/atest2")
+@Route(path = "/test/a")
 class ATestActivity : AppCompatActivity() {
 
     @Param(name = "progress")
     var prog = 0
 
-    @JvmField
     @Param
     var toast: String? = null
 
+    @Param
+    var list: MutableList<String>? = null
+
     private val testService by lazy {
-        Router.get().build("/service/test")
-            .navigate(this) as TestService
+        Router.get().route(TestService::class.java)!!
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

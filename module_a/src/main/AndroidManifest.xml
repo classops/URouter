@@ -5,10 +5,6 @@
         <activity
             android:name=".ATestActivity"
             android:exported="false" />
-
-        <activity
-            android:name=".ATest2Activity"
-            android:exported="false" />
     </application>
 
 </manifest>
