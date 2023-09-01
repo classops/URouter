@@ -10,11 +10,7 @@ const val ROUTER_PKG_PATH = "io/github/classops/urouter"
 
 const val ROUTER_CLASS = "$ROUTER_PKG.Router"
 
-const val ROUTE_TABLE_INTERFACE = "$ROUTER_PKG_PATH/route/IRouteTable"
-
 const val ROUTER_ROUTE_INIT = "$ROUTER_PKG_PATH/init/RouteInit"
-
-const val ROUTER_METHOD_LOAD_ROUTE = "loadRouter"
 
 /**
  * 生成的路由类

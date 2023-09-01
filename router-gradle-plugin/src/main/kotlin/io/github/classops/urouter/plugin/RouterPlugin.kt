@@ -3,18 +3,13 @@ package io.github.classops.urouter.plugin
 import io.github.classops.urouter.plugin.transform.RouterRegister
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.logging.LogLevel
 import java.lang.module.ModuleDescriptor
 
 class RouterPlugin : Plugin<Project> {
 
     override fun apply(project: Project) {
         // 注入代码
-//        val register = if (isAGP7) {
-//            AGP7RouterRegister(project)
-//        } else {
-//            AGP4RouterRegister(project)
-//        }
-
         val clazz = if (isAGP7) {
             Class.forName("io.github.classops.urouter.plugin.transform.v7.AGP7RouterRegister")
         } else {
@@ -23,14 +18,15 @@ class RouterPlugin : Plugin<Project> {
         val constructor = clazz.getConstructor(Project::class.java)
         val register: RouterRegister = constructor.newInstance(project) as RouterRegister
         register.registerTransform()
-        println("AGP Version: " + register.pluginVersion)
+        println("router plugin apply")
+        project.logger.lifecycle("test")
     }
 
     private val isAGP7: Boolean
         get() =
             try {
                 val currVersion = ModuleDescriptor.Version.parse(com.android.builder.model.Version.ANDROID_GRADLE_PLUGIN_VERSION)
-                val compVersion = ModuleDescriptor.Version.parse("7.4.0")
+                val compVersion = ModuleDescriptor.Version.parse("8.0.0")
                 currVersion >= compVersion
             } catch (e: ClassNotFoundException) {
                 e.printStackTrace()

@@ -4,19 +4,15 @@ import com.android.build.api.transform.*
 import io.github.classops.urouter.plugin.GENERATED_ROUTE
 import io.github.classops.urouter.plugin.PLUGIN_NAME
 import io.github.classops.urouter.plugin.ROUTER_PKG_PATH
-import io.github.classops.urouter.plugin.asm.RouterClassVisitor
 import io.github.classops.urouter.plugin.transform.RouterInitGen
-import org.objectweb.asm.ClassReader
-import org.objectweb.asm.ClassWriter
-import org.objectweb.asm.Opcodes
+import org.gradle.api.logging.LogLevel
+import org.gradle.api.logging.Logger
 import java.io.File
-import java.io.IOException
-import java.io.InputStream
-import java.io.OutputStream
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
-class RouterTransformImpl4 : BaseTransform() {
+
+class RouterTransformImpl4(logger: Logger) : BaseTransform(logger) {
 
     private val classes = Collections.newSetFromMap(ConcurrentHashMap<String, Boolean>())
     private val deletedClasses = Collections.newSetFromMap(ConcurrentHashMap<String, Boolean>())
@@ -27,18 +23,6 @@ class RouterTransformImpl4 : BaseTransform() {
 
     override fun classFilter(name: String): Boolean {
         return name.startsWith(GENERATED_ROUTE)
-    }
-
-    override fun transformClass(input: InputStream, output: OutputStream) {
-        // 转换class文件
-        val cr = ClassReader(input)
-        val cw = ClassWriter(cr, ClassWriter.COMPUTE_FRAMES or ClassWriter.COMPUTE_MAXS)
-        cr.accept(RouterClassVisitor(Opcodes.ASM5, cw), ClassReader.EXPAND_FRAMES)
-        try {
-            output.write(cw.toByteArray())
-        } catch (e: IOException) {
-            e.printStackTrace()
-        }
     }
 
     override fun onClassAdd(className: String) {
@@ -59,10 +43,10 @@ class RouterTransformImpl4 : BaseTransform() {
         super.transform(context, inputs, referencedInputs, outputProvider, isIncremental)
         // 列表处理
         for (s in this.classes) {
-            println("class: $s")
+            logger.log(LogLevel.INFO, "class: $s")
         }
         for (s in this.deletedClasses) {
-            println("deleted class: $s")
+            logger.log(LogLevel.INFO, "deleted class: $s")
         }
 
         outputProvider ?: return
@@ -84,8 +68,7 @@ class RouterTransformImpl4 : BaseTransform() {
 
         // 获取类文件
         if (isIncremental) {
-            println("generate incremental route init class.")
-
+            logger.log(LogLevel.INFO, "generate incremental route init class.")
             file.inputStream().use { fis ->
                 val out = RouterInitGen.modifyRouteClasses(
                     fis,
@@ -100,7 +83,7 @@ class RouterTransformImpl4 : BaseTransform() {
                 }
             }
         } else {
-            println("generate route init class.")
+            logger.log(LogLevel.INFO, "generate route init class.")
             val out = RouterInitGen.addRouteClasses(
                 classes.filter { it.startsWith(GENERATED_ROUTE) }
                     .map { it.removeSuffix(".class").replace("/", ".") }

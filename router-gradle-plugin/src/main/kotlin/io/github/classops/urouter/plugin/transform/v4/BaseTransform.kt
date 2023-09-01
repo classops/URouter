@@ -4,13 +4,15 @@ import com.android.build.api.transform.*
 import com.android.build.api.transform.QualifiedContent.DefaultContentType
 import io.github.classops.urouter.plugin.CLASS_SUFFIX
 import io.github.classops.urouter.plugin.jar.getClasses
+import org.gradle.api.logging.LogLevel
+import org.gradle.api.logging.Logger
 import java.io.*
 import java.util.jar.JarFile
 import java.util.jar.JarOutputStream
 import java.util.zip.ZipEntry
 
 @Suppress("DEPRECATION")
-abstract class BaseTransform : Transform() {
+abstract class BaseTransform(val logger: Logger) : Transform() {
 
     override fun getInputTypes(): MutableSet<QualifiedContent.ContentType> {
         // TransformManager.CONTENT_CLASS
@@ -219,14 +221,16 @@ abstract class BaseTransform : Transform() {
         }
     }
 
-    abstract fun transformClass(input: InputStream, output: OutputStream)
+    protected fun transformClass(input: InputStream, output: OutputStream) {
+        input.copyTo(output, 8192)
+    }
 
     protected open fun onClassAdd(className: String) {
-        println("on class add: $className")
+        logger.log(LogLevel.INFO, "on class add: $className")
     }
 
     protected open fun onClassDelete(className: String) {
-        println("on class delete: $className")
+        logger.log(LogLevel.INFO, "on class delete: $className")
     }
 
     private fun isValidZipEntryName(entry: ZipEntry): Boolean {

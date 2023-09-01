@@ -6,7 +6,7 @@ plugins {
 }
 
 group 'io.github.classops.urouter'
-version '1.0.0'
+version '1.0.1'
 
 apply from: '../maven-publish.gradle'
 
@@ -27,14 +27,14 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.21"
-    compileOnly 'com.android.tools.build:gradle:7.4.2'
+//    compileOnly 'com.android.tools.build:gradle:7.4.2'
 //    implementation 'com.android.tools.build:gradle-api:7.4.2'
 
 //    compileOnly 'com.android.tools.build:gradle:4.2.1'
 //    implementation 'com.android.tools.build:gradle-api:4.2.1'
 
-//    compileOnly 'com.android.tools.build:gradle:8.0.0-alpha08'
-//    implementation 'com.android.tools.build:gradle-api:8.0.0-alpha08'
+    compileOnly 'com.android.tools.build:gradle:8.0.0'
+//    implementation 'com.android.tools.build:gradle-api:8.0.0'
 //    gradleApi()
     implementation 'org.apache.maven:maven-artifact:3.6.3'
     implementation 'org.ow2.asm:asm:9.4'

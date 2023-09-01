@@ -10,7 +10,7 @@ import java.io.InputStream
 object RouterInitGen {
 
     /**
-     * 生成Class文件
+     * 生成 class
      *
      * @param classes com.xxx.xxx.XXX 形式，没有.class后缀
      */
