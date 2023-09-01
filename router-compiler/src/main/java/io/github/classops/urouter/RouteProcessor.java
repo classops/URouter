@@ -74,71 +74,18 @@ public class RouteProcessor extends BaseProcessor {
             TypeElement typeElement = (TypeElement) element;
             Route route = typeElement.getAnnotation(Route.class);
             byte routeType = getRouteType(typeElement.asType());
-            if (routeType != RouteType.UNKNOWN) {
+            if (routeType == RouteType.UNKNOWN) {
                 continue;
             }
 
-            System.out.println("Route path: " + route.path() + ", alias: " + Arrays.toString(route.alias()));
-
             // 获取参数信息，字段名 和 类型
             List<? extends Element> members = mElementUtils.getAllMembers(typeElement);
-            Map<String, Integer> paramsType;
-            if (members != null) {
-                paramsType = new HashMap<>();
-                // element, field name, field type, param name, param type
-                List<FieldInfo> fieldInfoList = new ArrayList<>();
-                for (Element member : members) {
-                    if (member.getKind() == ElementKind.FIELD) {
-                        VariableElement varElement = (VariableElement) member;
-                        Param param = member.getAnnotation(Param.class);
-                        if (param == null) {
-                            continue;
-                        }
-
-                        TypeMirror typeMirror = varElement.asType();
-                        String fieldName = varElement.getSimpleName().toString();
-                        String paramName = param.name();
-                        if (StringUtils.isBlank(paramName)) {
-                            paramName = fieldName;
-                        }
-
-                        System.out.println(getFieldType(varElement) + " " + element.getModifiers() +
-                                " field: " + typeMirror + " " + varElement.getSimpleName() +
-                                ", " + param.name() + ", desc: " + param.desc());
-
-                        FieldType fieldType = getFieldType(varElement);
-                        if (fieldType == FieldType.NOT_SUPPORT) {
-                            mMessager.printMessage(Diagnostic.Kind.ERROR, "field is not supported! make field public, or add setter/getter.");
-                        }
-
-                        /*
-                        // check modifier
-                        if (MemberUtils.isStatic(element)) {
-                            mMessager.printMessage(Diagnostic.Kind.ERROR, "must non-static member!");
-                            return true;
-                        }
-
-                        if (MemberUtils.isFinal(element)) {
-                            mMessager.printMessage(Diagnostic.Kind.ERROR, "must non-final member!");
-                            return true;
-                        }
-                        */
-
-                        int paramType = getParamType(typeMirror);
-                        paramsType.put(paramName, getParamType(typeMirror));
-                        fieldInfoList.add(new FieldInfo(varElement, fieldType, paramName, paramType));
-                    }
-                }
-
-                try {
-                    genInjectorJavaFile(typeElement, fieldInfoList);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            } else {
-                paramsType = null;
+            Map<String, Integer> paramsType = new HashMap<>();
+            try {
+                genInjectorJavaFile(typeElement, getFieldInfos(members, paramsType));
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-
             routes.put(route.path(), new RouteItem(routeType, typeElement, paramsType));
         }
 
@@ -150,6 +97,59 @@ public class RouteProcessor extends BaseProcessor {
         }
 
         return true;
+    }
+
+    /**
+     * 获取类注解的所有字段信息
+     */
+    private List<FieldInfo> getFieldInfos(List<? extends Element> members, Map<String, Integer> paramsType) {
+        // element, field name, field type, param name, param type
+        if (members == null || members.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<FieldInfo> fieldInfoList = new ArrayList<>();
+        for (Element member : members) {
+            if (member.getKind() != ElementKind.FIELD) {
+                continue;
+            }
+
+            VariableElement varElement = (VariableElement) member;
+            Param param = member.getAnnotation(Param.class);
+            if (param == null) {
+                continue;
+            }
+
+            TypeMirror typeMirror = varElement.asType();
+            String fieldName = varElement.getSimpleName().toString();
+            String paramName = param.name();
+            if (StringUtils.isBlank(paramName)) {
+                paramName = fieldName;
+            }
+
+            // check static modifier
+            if (MemberUtils.isStatic(varElement)) {
+                mMessager.printMessage(Diagnostic.Kind.ERROR,
+                        "field " + varElement.getSimpleName() + " must be non-static!");
+            }
+            // check final modifier
+            if (MemberUtils.isFinal(varElement)) {
+                mMessager.printMessage(Diagnostic.Kind.ERROR,
+                        "field " + varElement.getSimpleName() + " must be non-final!");
+            }
+
+            FieldType fieldType = getFieldType(varElement);
+            if (fieldType == FieldType.NOT_SUPPORTED) {
+                mMessager.printMessage(Diagnostic.Kind.ERROR,
+                        "field " + varElement.getSimpleName() + " is not supported!");
+                mMessager.printMessage(Diagnostic.Kind.ERROR,
+                        "make field " + varElement.getSimpleName() + " public, or add setter/getter!");
+            }
+
+            int paramType = getParamType(typeMirror);
+            paramsType.put(paramName, getParamType(typeMirror));
+            fieldInfoList.add(new FieldInfo(varElement, fieldType, paramName, paramType));
+        }
+        return fieldInfoList;
     }
 
     private byte getRouteType(TypeMirror typeMirror) {
@@ -274,16 +274,8 @@ public class RouteProcessor extends BaseProcessor {
         } else if (hasGetter && hasSetter) {
             return FieldType.PROPERTY;
         } else {
-            return FieldType.NOT_SUPPORT;
+            return FieldType.NOT_SUPPORTED;
         }
-    }
-
-    enum FieldType {
-        FIELD,
-        PROPERTY,
-        BOOL_PROPERTY,
-        BOOL_PROPERTY_KT,
-        NOT_SUPPORT
     }
 
     private int getParamType(TypeMirror typeMirror) {
@@ -313,8 +305,6 @@ public class RouteProcessor extends BaseProcessor {
             case "java.lang.CharSequence":
                 return ParamType.CHARSEQUENCE;
             default:
-                System.out.println("subtype: " + mTypeUtils.isSubtype(typeMirror, mListType) + ", assignable: " +
-                        mTypeUtils.isAssignable(typeMirror, mListType));
                 if (mTypeUtils.isSubtype(typeMirror, mParcelableType)) {
                     return ParamType.PARCELABLE;
                 } else if (mTypeUtils.isSubtype(typeMirror, mSerializableType) &&
@@ -328,9 +318,9 @@ public class RouteProcessor extends BaseProcessor {
     }
 
     private void genInjectorJavaFile(Element classElement, List<FieldInfo> list) throws IOException {
-        if (list.isEmpty())
+        if (list == null || list.isEmpty()) {
             return;
-
+        }
         ClassName serilizationClassName = ClassName.get(RouteProcessor.ROUTER_PKG + ".service", "SerializationService");
         ClassName routerClass = ClassName.get(ROUTER_PKG, "Router");
 
@@ -511,7 +501,7 @@ public class RouteProcessor extends BaseProcessor {
             methodSpecBuilder.addStatement("$T args = target.getArguments()", bundleClass);
         }
 
-        for (RouteProcessor.FieldInfo fieldInfo : list) {
+        for (FieldInfo fieldInfo : list) {
             String fieldName = fieldInfo.element.getSimpleName().toString();
             switch (fieldInfo.fieldType) {
                 case FIELD:
@@ -547,7 +537,7 @@ public class RouteProcessor extends BaseProcessor {
                     // setterName
                     // target.setterName(extras.getXXX("{fieldInfo.paramName}"))
                     String upperFieldName;
-                    if (fieldInfo.fieldType == RouteProcessor.FieldType.BOOL_PROPERTY_KT) {
+                    if (fieldInfo.fieldType == FieldType.BOOL_PROPERTY_KT) {
                         upperFieldName = fieldName.substring(2);
                     } else {
                         upperFieldName = fieldName.substring(0, 1).toUpperCase() +
@@ -555,9 +545,9 @@ public class RouteProcessor extends BaseProcessor {
                     }
                     String setterName = "set" + upperFieldName;
                     String getterName;
-                    if (fieldInfo.fieldType == RouteProcessor.FieldType.BOOL_PROPERTY) {
+                    if (fieldInfo.fieldType == FieldType.BOOL_PROPERTY) {
                         getterName = "is" + upperFieldName;
-                    } else if (fieldInfo.fieldType == RouteProcessor.FieldType.BOOL_PROPERTY_KT) {
+                    } else if (fieldInfo.fieldType == FieldType.BOOL_PROPERTY_KT) {
                         getterName = "is" + upperFieldName;
                     } else {
                         getterName = "get" + upperFieldName;
@@ -664,8 +654,9 @@ public class RouteProcessor extends BaseProcessor {
     }
 
     private String buildParamsMap(Map<String, Integer> paramsType) {
-        int size = paramsType.size();
-        if (size == 0) return "null";
+        if (paramsType == null || paramsType.isEmpty()) {
+            return "null";
+        }
         StringBuilder sb = new StringBuilder();
         for (String key : paramsType.keySet()) {
             Integer value = paramsType.get(key);
@@ -676,6 +667,14 @@ public class RouteProcessor extends BaseProcessor {
                     .append(")");
         }
         return ROUTER_PKG + ".MapUtils.newBuilder()" + sb + ".build()";
+    }
+
+    enum FieldType {
+        FIELD,
+        PROPERTY,
+        BOOL_PROPERTY,
+        BOOL_PROPERTY_KT,
+        NOT_SUPPORTED
     }
 
     static class FieldInfo {
