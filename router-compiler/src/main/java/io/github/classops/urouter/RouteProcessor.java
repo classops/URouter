@@ -326,7 +326,7 @@ public class RouteProcessor extends BaseProcessor {
 
         MethodSpec queryMethod = generateQueryMethod(classElement, list);
         MethodSpec injectMethod = generateInjectMethod(classElement, list);
-        ClassName injectInterface = ClassName.get(ROUTER_PKG, "Injector");
+        ClassName injectInterface = ClassName.get(ROUTER_PKG + ".inject", "Injector");
         TypeSpec typeSpec = TypeSpec.classBuilder(classElement.getSimpleName() + CLASS_SEP + ROUTER + CLASS_SEP + "Injector")
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .addSuperinterface(injectInterface)
@@ -383,15 +383,6 @@ public class RouteProcessor extends BaseProcessor {
                 .addStatement("$T keys = uri.getQueryParameterNames()",
                         ParameterizedTypeName.get(Set.class, String.class));
 
-//                .addStatement("Set<String> keys = uri.getQueryParameterNames()")
-//                .beginControlFlow("if (keys != null)")
-//                .beginControlFlow("for ($T key : keys)", String.class)
-//                .addStatement("$T value =  = uri.getQueryParameter(key)", String.class)
-//                .addStatement("")
-//                .endControlFlow()
-//                .endControlFlow();
-
-
         methodSpecBuilder.beginControlFlow("if (keys != null && keys.size() > 0)");
         for (FieldInfo fieldInfo : list) {
             addParam(methodSpecBuilder, fieldInfo);
@@ -402,7 +393,6 @@ public class RouteProcessor extends BaseProcessor {
     }
 
     private void addParam(MethodSpec.Builder builder, FieldInfo fieldInfo) {
-        // FIXME 默认值
         switch (fieldInfo.paramType) {
             case ParamType.BOOLEAN:
                 builder.addStatement("extras.putBoolean($S, $T.toBoolean(uri.getQueryParameter($S)))",
@@ -449,7 +439,7 @@ public class RouteProcessor extends BaseProcessor {
                                 fieldInfo.paramName,
                                 ClassName.get("android.os", "Parcelable"),
                                 fieldInfo.paramName,
-                                ParameterizedTypeName.get(ClassName.get(ROUTER_PKG,"TypeToken"),
+                                ParameterizedTypeName.get(ClassName.get(ROUTER_PKG + ".inject","TypeToken"),
                                         TypeName.get(fieldInfo.element.asType())));
                 break;
 
@@ -458,7 +448,7 @@ public class RouteProcessor extends BaseProcessor {
                                 fieldInfo.paramName,
                                 Serializable.class,
                                 fieldInfo.paramName,
-                                ParameterizedTypeName.get(ClassName.get(ROUTER_PKG,"TypeToken"),
+                                ParameterizedTypeName.get(ClassName.get(ROUTER_PKG + ".inject","TypeToken"),
                                         TypeName.get(fieldInfo.element.asType())));
                 break;
 
@@ -484,16 +474,6 @@ public class RouteProcessor extends BaseProcessor {
                 .returns(void.class)
                 .addStatement("$T target = ($T) object", classElement.asType(), classElement.asType());
 
-        /*
-        // SerializationService service = ...;
-        ClassName serilizationClassName = ClassName.get(RouteProcessor.ROUTER_PKG + ".service", "SerializationService");
-        ClassName routerClass = ClassName.get(ROUTER_PKG, "Router");
-        methodSpecBuilder.addStatement("$T service = $T.get().route($T.class)",
-                serilizationClassName,
-                routerClass,
-                serilizationClassName);
-        */
-
         ClassName bundleClass = ClassName.get("android.os", "Bundle");
         if (isAndroidActivity(classElement)) {
             methodSpecBuilder.addStatement("$T args = target.getIntent().getExtras()", bundleClass);
@@ -501,30 +481,38 @@ public class RouteProcessor extends BaseProcessor {
             methodSpecBuilder.addStatement("$T args = target.getArguments()", bundleClass);
         }
 
+        ClassName bundleUtilsClass = ClassName.get(RouteProcessor.ROUTER_PKG + ".utils", "BundleUtils");
         for (FieldInfo fieldInfo : list) {
             String fieldName = fieldInfo.element.getSimpleName().toString();
             switch (fieldInfo.fieldType) {
                 case FIELD:
                     // $T.{fieldName} = extras.getXX("")
                     if (fieldInfo.paramType == ParamType.PARCELABLE) {
-                        // target.XXX = args.getParcelable("XXX");
-                        methodSpecBuilder.addStatement("target.$N = args.getParcelable($S)",
-                                fieldName, fieldInfo.paramName);
-                    } else if (fieldInfo.paramType == ParamType.SERIALIZABLE) {
-                        // activity.sa = (SA) args.getSerializable("sa");
-                        methodSpecBuilder.addStatement("target.$N = ($T) args.getSerializable($S)",
-                                fieldName, fieldInfo.element.asType(), fieldInfo.paramName);
-                    } else if (fieldInfo.paramType == ParamType.OBJECT) {
-                        methodSpecBuilder.addStatement("target.$N = service.parseObject($T.getString(target, $S), new $T() {}.getType())",
+                        // BundleUtils.getParcelable(args, "sa", SA.class);
+                        methodSpecBuilder.addStatement("target.$N = $T.getParcelable(args, $S, $T.class)",
                                 fieldName,
-                                ClassName.get(RouteProcessor.ROUTER_PKG + ".utils", "StateUtils"),
+                                bundleUtilsClass,
                                 fieldInfo.paramName,
-                                ParameterizedTypeName.get(ClassName.get(ROUTER_PKG,"TypeToken"),
+                                fieldInfo.element.asType());
+
+                    } else if (fieldInfo.paramType == ParamType.SERIALIZABLE) {
+                        // BundleUtils.getSerializable(args, "sa", SA.class);
+                        methodSpecBuilder.addStatement("target.$N = $T.getSerializable(args, $S, $T.class)",
+                                fieldName,
+                                bundleUtilsClass,
+                                fieldInfo.paramName,
+                                fieldInfo.element.asType());
+                    } else if (fieldInfo.paramType == ParamType.OBJECT) {
+                        methodSpecBuilder.addStatement("target.$N = service.parseObject($T.getString(args, $S), new $T() {}.getType())",
+                                fieldName,
+                                bundleUtilsClass,
+                                fieldInfo.paramName,
+                                ParameterizedTypeName.get(ClassName.get(ROUTER_PKG + ".inject","TypeToken"),
                                         TypeName.get(fieldInfo.element.asType())));
                     } else {
-                        methodSpecBuilder.addStatement("target.$N = $T.get$N(target, $S, target.$N)",
+                        methodSpecBuilder.addStatement("target.$N = $T.get$N(args, $S, target.$N)",
                                 fieldName,
-                                ClassName.get(RouteProcessor.ROUTER_PKG + ".utils", "StateUtils"),
+                                bundleUtilsClass,
                                 RouteProcessor.sTypeMapping.get(fieldInfo.paramType),
                                 fieldInfo.paramName,
                                 fieldName);
@@ -554,27 +542,30 @@ public class RouteProcessor extends BaseProcessor {
                     }
 
                     if (fieldInfo.paramType == ParamType.PARCELABLE) {
-                        // target.setXXX(args.getParcelable("name"));
-                        methodSpecBuilder.addStatement("target.$N(args.getParcelable($S))",
+                        // target.setXXX(BundleUtils.getParcelable(args, "name", SA.class));
+                        methodSpecBuilder.addStatement("target.$N($T.getParcelable(args, $S, $T.class))",
                                 setterName,
-                                fieldInfo.paramName);
-                    } else if (fieldInfo.paramType == ParamType.SERIALIZABLE) {
-                        // target.setXXX((SA) args.getSerializable("name"));
-                        methodSpecBuilder.addStatement("target.$N($T) args.getSerializable($S)",
-                                setterName,
-                                fieldInfo.element.asType(),
-                                fieldInfo.paramName);
-                    } else if (fieldInfo.paramType == ParamType.OBJECT) {
-                        methodSpecBuilder.addStatement("target.$N(service.parseObject($T.getString(target, $S), new $T() {}.getType()))",
-                                setterName,
-                                ClassName.get(RouteProcessor.ROUTER_PKG + ".utils", "StateUtils"),
+                                bundleUtilsClass,
                                 fieldInfo.paramName,
-                                ParameterizedTypeName.get(ClassName.get(ROUTER_PKG,"TypeToken"),
+                                fieldInfo.element.asType());
+                    } else if (fieldInfo.paramType == ParamType.SERIALIZABLE) {
+                        // target.setXXX(BundleUtils.getSerializable(args, "name", SA.class));
+                        methodSpecBuilder.addStatement("target.$N($T.getSerializable(args, $S, $T.class))",
+                                setterName,
+                                bundleUtilsClass,
+                                fieldInfo.paramName,
+                                fieldInfo.element.asType());
+                    } else if (fieldInfo.paramType == ParamType.OBJECT) {
+                        methodSpecBuilder.addStatement("target.$N(service.parseObject($T.getString(args, $S), new $T() {}.getType()))",
+                                setterName,
+                                bundleUtilsClass,
+                                fieldInfo.paramName,
+                                ParameterizedTypeName.get(ClassName.get(ROUTER_PKG + ".inject","TypeToken"),
                                         TypeName.get(fieldInfo.element.asType())));
                     } else {
-                        methodSpecBuilder.addStatement("target.$N($T.get$N(target, $S, target.$N()))",
+                        methodSpecBuilder.addStatement("target.$N($T.get$N(args, $S, target.$N()))",
                                 setterName,
-                                ClassName.get(RouteProcessor.ROUTER_PKG + ".utils", "StateUtils"),
+                                bundleUtilsClass,
                                 RouteProcessor.sTypeMapping.get(fieldInfo.paramType),
                                 fieldInfo.paramName,
                                 getterName);
@@ -603,7 +594,8 @@ public class RouteProcessor extends BaseProcessor {
         for (String path : routes.keySet()) {
             RouteItem routeItem = routes.get(path);
             methodSpecBuilder.addStatement("table.put($S, $T.build((byte) $L, $N.class, $N))", path, RouteInfo.class,
-                    routeItem.getType(), routeItem.getTypeElement().getQualifiedName().toString(), buildParamsMap(routeItem.getParamsType()));
+                    routeItem.getType(), routeItem.getTypeElement().getQualifiedName().toString(),
+                    buildParamsMap(routeItem.getParamsType()));
         }
         MethodSpec methodSpec = methodSpecBuilder.build();
         TypeSpec typeSpec = TypeSpec.classBuilder(ROUTER + CLASS_SEP + mProjectName)
@@ -666,7 +658,7 @@ public class RouteProcessor extends BaseProcessor {
                     .append(value)
                     .append(")");
         }
-        return ROUTER_PKG + ".MapUtils.newBuilder()" + sb + ".build()";
+        return ROUTER_PKG + ".Utils.mapBuilder()" + sb + ".build()";
     }
 
     enum FieldType {

@@ -37,10 +37,10 @@ public class SecondActivity extends AppCompatActivity {
     public String toast;
 
     @Param(name = "sa")
-    public SA sa;
+    private SA sa;
 
     @Param(name = "pa")
-    public PA pa;
+    private PA pa;
 
     @Param(name = "a")
     public A<B> a;
@@ -76,4 +76,19 @@ public class SecondActivity extends AppCompatActivity {
         });
     }
 
+    public SA getSa() {
+        return sa;
+    }
+
+    public void setSa(SA sa) {
+        this.sa = sa;
+    }
+
+    public PA getPa() {
+        return pa;
+    }
+
+    public void setPa(PA pa) {
+        this.pa = pa;
+    }
 }

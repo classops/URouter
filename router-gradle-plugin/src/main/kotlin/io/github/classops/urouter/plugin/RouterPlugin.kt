@@ -18,8 +18,6 @@ class RouterPlugin : Plugin<Project> {
         val constructor = clazz.getConstructor(Project::class.java)
         val register: RouterRegister = constructor.newInstance(project) as RouterRegister
         register.registerTransform()
-        println("router plugin apply")
-        project.logger.lifecycle("test")
     }
 
     private val isAGP7: Boolean

@@ -1,7 +1,8 @@
-package io.github.classops.urouter;
+package io.github.classops.urouter.inject;
 
 import android.os.Bundle;
 
+import io.github.classops.urouter.UriRequest;
 import io.github.classops.urouter.route.RouteInfo;
 
 /**

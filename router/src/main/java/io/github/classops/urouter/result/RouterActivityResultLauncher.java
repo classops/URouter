@@ -19,10 +19,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.github.classops.urouter.Interceptor;
-import io.github.classops.urouter.RouteInterceptor;
 import io.github.classops.urouter.Router;
 import io.github.classops.urouter.UriRequest;
 import io.github.classops.urouter.interceptor.RealInterceptorChain;
+import io.github.classops.urouter.interceptor.RouteInterceptor;
 
 /**
  * RouterActivityResultLauncher
@@ -52,39 +52,7 @@ public class RouterActivityResultLauncher extends ActivityResultLauncher<UriRequ
     @Override
     public void launch(final UriRequest input, @Nullable final ActivityOptionsCompat options) {
         // 执行异步的拦截器，线程池执行 拦截器
-        Router.get().getExecutor().execute(new Runnable() {
-            @WorkerThread
-            @Override
-            public void run() {
-                try {
-                    // 执行拦截器
-                    List<Interceptor> interceptors = new ArrayList<>(Router.get().getInterceptors());
-                    interceptors.add(new RouteInterceptor(context, null));
-                    Interceptor.Chain chain = new RealInterceptorChain(0, interceptors, input);
-                    // 不启动Activity，仅处理最后结果
-                    input.setStartActivity(false);
-                    // 拦截
-                    final Intent intent = (Intent) chain.proceed(input);
-                    if (intent == null) {
-                        throw new ActivityNotFoundException();
-                    }
-                    handler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            launcher.launch(intent, options);
-                        }
-                    });
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    handler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            resultCallback.onActivityResult(null);
-                        }
-                    });
-                }
-            }
-        });
+        Router.get().getExecutor().execute(() -> launchRequest(input, options));
     }
 
     @MainThread
@@ -97,6 +65,29 @@ public class RouterActivityResultLauncher extends ActivityResultLauncher<UriRequ
     @Override
     public ActivityResultContract<UriRequest, ?> getContract() {
         throw new UnsupportedOperationException("unsupported operation");
+    }
+
+    @WorkerThread
+    private void launchRequest(UriRequest input, @Nullable final ActivityOptionsCompat options) {
+        try {
+            // 执行拦截器
+            List<Interceptor> interceptors = new ArrayList<>(Router.get().getInterceptors());
+            interceptors.add(new RouteInterceptor(context, null));
+            // 不启动Activity，仅处理最后结果
+            UriRequest request = input.newBuilder()
+                    .routeOnly()
+                    .build();
+            Interceptor.Chain chain = new RealInterceptorChain(0, interceptors, request);
+            // 拦截
+            final Intent intent = (Intent) chain.proceed(request);
+            if (intent == null) {
+                throw new ActivityNotFoundException();
+            }
+            handler.post(() -> launcher.launch(intent, options));
+        } catch (Exception e) {
+            e.printStackTrace();
+            handler.post(() -> resultCallback.onActivityResult(null));
+        }
     }
 
 }

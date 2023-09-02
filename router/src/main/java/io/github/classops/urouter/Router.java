@@ -30,13 +30,15 @@ import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
+import io.github.classops.urouter.inject.Injector;
 import io.github.classops.urouter.interceptor.RealInterceptorChain;
+import io.github.classops.urouter.interceptor.RouteInterceptor;
 import io.github.classops.urouter.result.RouterActivityResultLauncher;
 import io.github.classops.urouter.route.IRouteTable;
 import io.github.classops.urouter.route.IServiceTable;
-import io.github.classops.urouter.route.ParamType;
 import io.github.classops.urouter.route.RouteInfo;
 import io.github.classops.urouter.route.RouteType;
+import io.github.classops.urouter.service.DefaultServiceFactory;
 import io.github.classops.urouter.service.ServiceLoader;
 
 /**
@@ -47,23 +49,7 @@ import io.github.classops.urouter.service.ServiceLoader;
  */
 public class Router {
 
-    @SuppressLint("StaticFieldLeak")
     private static volatile Router sRouter;
-
-    private Context context;
-    @NonNull
-    private final Map<String, RouteInfo> routeTables = new ArrayMap<>();
-    private final Map<Class<?>, Injector> injectorMap = new ArrayMap<>();
-    // 路径 到 接口Class 的映射
-    private final Map<String, RouteInfo> serviceMap = new ArrayMap<>();
-    private final List<Interceptor> interceptors = new ArrayList<>();
-    private final ServiceLoader serviceLoader = new ServiceLoader();
-    private final Handler handler = new Handler(Looper.getMainLooper());
-    private final Executor executor;
-
-    public Router() {
-        this.executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
-    }
 
     public static Router get() {
         if (sRouter == null) {
@@ -76,10 +62,36 @@ public class Router {
         return sRouter;
     }
 
+    private Application context;
+    @NonNull
+    private final Map<String, RouteInfo> routeTables = new ArrayMap<>();
+    private final Map<Class<?>, Injector> injectorMap = new ArrayMap<>();
+    // 路径 到 接口Class 的映射
+    private final Map<String, RouteInfo> serviceMap = new ArrayMap<>();
+    private final List<Interceptor> interceptors = new ArrayList<>();
+    private final ServiceLoader serviceLoader = new ServiceLoader(new DefaultServiceFactory());
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private final Executor executor;
+
+    public Router() {
+        this.executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
+    }
+
+    public Context getContext() {
+        return this.context;
+    }
+
+    public List<Interceptor> getInterceptors() {
+        return this.interceptors;
+    }
+
+    public Executor getExecutor() {
+        return this.executor;
+    }
+
     public void init(@NonNull Application application) {
         this.context = application;
         // 初始化工作
-        // map 处理 path 匹配
         loadRouter();
     }
 
@@ -117,18 +129,11 @@ public class Router {
         }
     }
 
-    public void registerTable(@Nullable IRouteTable route) {
-        if (route != null) {
-            route.load(routeTables);
-        }
-    }
-
-    public void registerService(@Nullable IServiceTable route) {
-        if (route != null) {
-            route.load(serviceMap);
-        }
-    }
-
+    /**
+     * 方法手动添加路由表信息
+     * @param path path
+     * @param routeInfo 路由信息
+     */
     public void register(@NonNull String path, @NonNull RouteInfo routeInfo) {
         routeTables.put(path, routeInfo);
         if (routeInfo.getType() == RouteType.SERVICE) {
@@ -136,16 +141,12 @@ public class Router {
         }
     }
 
-    public Context getContext() {
-        return this.context;
+    public void registerTable(@NonNull IRouteTable route) {
+        route.load(routeTables);
     }
 
-    public List<Interceptor> getInterceptors() {
-        return interceptors;
-    }
-
-    public Executor getExecutor() {
-        return executor;
+    public void registerService(@NonNull IServiceTable route) {
+        route.load(serviceMap);
     }
 
     /**
@@ -205,33 +206,24 @@ public class Router {
     @Nullable
     public Object route(@Nullable final Context context, @NonNull final UriRequest request,
                         @Nullable final NavigationCallback callback) {
-        if (request.isIgnoreInterceptor()) {
+        return this.route(context, request, callback, true);
+    }
+
+    @AnyThread
+    @Nullable
+    public Object route(@Nullable final Context context, @NonNull final UriRequest request,
+                        @Nullable final NavigationCallback callback, boolean intercept) {
+        if (!intercept || request.isIgnoreInterceptor()) {
             return routeInternal(context, request, callback);
         } else {
-            this.executor.execute(new Runnable() {
-                @WorkerThread
-                @Override
-                public void run() {
-                    try {
-                        List<Interceptor> interceptors = new ArrayList<>(Router.this.interceptors);
-                        interceptors.add(new RouteInterceptor(context, callback));
-                        Interceptor.Chain chain = new RealInterceptorChain(0, interceptors, request);
-                        chain.proceed(request);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        if (callback != null) {
-                            runOnMainThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    callback.onInterrupt(request);
-                                }
-                            });
-                        }
-                    }
-                }
-            });
+            this.executor.execute(() -> routeRequest(context, callback, request));
             return null;
         }
+    }
+
+    @Nullable
+    public <T> T navigate(Class<? extends  T> clazz) {
+        return this.route(clazz);
     }
 
     @SuppressWarnings("unchecked")
@@ -244,6 +236,22 @@ public class Router {
         return (T) serviceLoader.getService(routeInfo.getClazz());
     }
 
+    @WorkerThread
+    void routeRequest(@Nullable Context context, @Nullable NavigationCallback callback,
+                      @NonNull UriRequest request) {
+        try {
+            List<Interceptor> interceptors = new ArrayList<>(Router.this.interceptors);
+            interceptors.add(new RouteInterceptor(context, callback));
+            Interceptor.Chain chain = new RealInterceptorChain(0, interceptors, request);
+            chain.proceed(request);
+        } catch (Exception e) {
+            e.printStackTrace();
+            if (callback != null) {
+                runOnMainThread(() -> callback.onInterrupt(request));
+            }
+        }
+    }
+
     @AnyThread
     Object routeInternal(@Nullable Context context, @NonNull final UriRequest request,
                          @Nullable final NavigationCallback callback) {
@@ -251,12 +259,7 @@ public class Router {
         // 路径是空，直接返回
         if (path == null) {
             if (callback != null) {
-                runOnMainThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        callback.onLost(request);
-                    }
-                });
+                runOnMainThread(() -> callback.onLost(request));
             }
             return null;
         }
@@ -265,22 +268,12 @@ public class Router {
         int routeType = request.getRouteType();
         if (routeInfo == null || (routeType != RouteType.UNKNOWN && routeInfo.getType() != routeType)) {
             if (callback != null) {
-                runOnMainThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        callback.onLost(request);
-                    }
-                });
+                runOnMainThread(() -> callback.onLost(request));
             }
             return null;
         }
         if (callback != null) {
-            runOnMainThread(new Runnable() {
-                @Override
-                public void run() {
-                    callback.onFound(request);
-                }
-            });
+            runOnMainThread(() -> callback.onFound(request));
         }
         return routeInternal(context != null ? context : this.context, request, routeInfo, callback);
     }
@@ -300,13 +293,10 @@ public class Router {
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 }
                 if (request.isStartActivity()) {
-                    runOnMainThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            routeActivity(context, intent, request);
-                            if (callback != null) {
-                                callback.onArrival(request);
-                            }
+                    runOnMainThread(() -> {
+                        routeActivity(context, intent, request);
+                        if (callback != null) {
+                            callback.onArrival(request);
                         }
                     });
                 }
@@ -362,6 +352,7 @@ public class Router {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private Object routeFragment(@NonNull Context context, @NonNull UriRequest request,
                                  @NonNull RouteInfo routeInfo) {
         Class<?> clazz = routeInfo.getClazz();
@@ -405,51 +396,6 @@ public class Router {
             extras = request.getExtras();
         }
         return extras;
-    }
-
-    private void addParam(Bundle extras, String key, String value, int paramType) {
-        try {
-            switch (paramType) {
-                case ParamType.BOOLEAN:
-                    extras.putBoolean(key, Boolean.parseBoolean(value));
-                    break;
-
-                case ParamType.BYTE:
-                    extras.putByte(key, Byte.parseByte(value));
-                    break;
-
-                case ParamType.SHORT:
-                    extras.putShort(key, Short.parseShort(value));
-                    break;
-
-                case ParamType.INT:
-                    extras.putInt(key, Integer.parseInt(value));
-                    break;
-
-                case ParamType.LONG:
-                    extras.putLong(key, Long.parseLong(value));
-                    break;
-
-                case ParamType.CHAR:
-                    extras.putChar(key, value.charAt(0));
-                    break;
-
-                case ParamType.FLOAT:
-                    extras.putFloat(key, Float.parseFloat(value));
-                    break;
-
-                case ParamType.DOUBLE:
-                    extras.putDouble(key, Double.parseDouble(value));
-                    break;
-
-                default:
-                    // PARCELABLE/SERIALIZABLE/OBJECT/STRING 直接使用String
-                    extras.putString(key, value);
-                    break;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
 }

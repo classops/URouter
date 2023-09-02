@@ -1,8 +1,12 @@
-package io.github.classops.urouter;
+package io.github.classops.urouter.interceptor;
 
 import android.content.Context;
 
 import androidx.annotation.Nullable;
+
+import io.github.classops.urouter.Interceptor;
+import io.github.classops.urouter.NavigationCallback;
+import io.github.classops.urouter.Router;
 
 public class RouteInterceptor implements Interceptor {
 
@@ -10,7 +14,7 @@ public class RouteInterceptor implements Interceptor {
     @Nullable
     private final NavigationCallback navigationCallback;
 
-    public RouteInterceptor(Context context, @Nullable NavigationCallback callback) {
+    public RouteInterceptor(@Nullable Context context, @Nullable NavigationCallback callback) {
         this.context = context;
         this.navigationCallback = callback;
     }
@@ -18,6 +22,6 @@ public class RouteInterceptor implements Interceptor {
     @Nullable
     @Override
     public Object intercept(Chain chain) throws Exception {
-        return Router.get().routeInternal(context, chain.request(), navigationCallback);
+        return Router.get().route(context, chain.request(), navigationCallback, false);
     }
 }

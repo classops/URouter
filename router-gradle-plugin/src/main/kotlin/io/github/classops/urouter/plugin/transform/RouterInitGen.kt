@@ -68,7 +68,7 @@ object RouterInitGen {
         mv.visitLdcInsn(clazz)
         mv.visitMethodInsn(
             Opcodes.INVOKEVIRTUAL,
-            ROUTER_CLASS.replace(".", "/"),
+            ROUTER_CLASS.replace('.', '/'),
             "register",
             "(Ljava/lang/String;)V",
             false

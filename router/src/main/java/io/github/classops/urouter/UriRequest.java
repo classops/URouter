@@ -25,36 +25,53 @@ public class UriRequest {
 
     @NonNull
     private final Uri uri;
+    @Nullable
     private final Bundle extras;
-    private int flags;
-    private int enterAnim = -1;
-    private int exitAnim = -1;
+    private final int routeType;
+    private final int flags;
+    private final int enterAnim;
+    private final int exitAnim;
+    private final Bundle activityOptions;
+    private final boolean startActivity;
+    private final int requestCode;
+    private final boolean ignoreInterceptor;
 
-    private Bundle activityOptions;
-
-    private int routeType = RouteType.UNKNOWN;
-
-    private boolean startActivity = true;
-    private int requestCode = -1;
-
-    private boolean ignoreInterceptor;
-
-    public UriRequest(@NonNull Uri uri, Bundle extras) {
+    public UriRequest(@NonNull Uri uri, @Nullable Bundle extras, int routeType, int flags,
+                      int enterAnim, int exitAnim, Bundle activityOptions, int requestCode,
+                      boolean startActivity, boolean ignoreInterceptor) {
         this.uri = uri;
         this.extras = extras;
+        this.routeType = routeType;
+        this.flags = flags;
+        this.enterAnim = enterAnim;
+        this.exitAnim = exitAnim;
+        this.activityOptions = activityOptions;
+        this.requestCode = requestCode;
+        this.startActivity = startActivity;
+        this.ignoreInterceptor = ignoreInterceptor;
     }
 
-    public UriRequest(@NonNull String url, Bundle extras) {
-        this.uri = Uri.parse(url);
-        this.extras = extras;
+    public UriRequest(@NonNull String url, @Nullable Bundle extras, int routeType, int flags,
+                      int enterAnim, int exitAnim, Bundle activityOptions, int requestCode,
+                      boolean startActivity, boolean ignoreInterceptor) {
+        this(Uri.parse(url), extras, routeType, flags, enterAnim, exitAnim, activityOptions,
+                requestCode, startActivity, ignoreInterceptor);
     }
 
-    public UriRequest(String scheme, String host, @NonNull String path, Bundle extras) {
+    public UriRequest(String scheme, String host, @NonNull String path, @Nullable Bundle extras,
+                      int routeType, int flags, int enterAnim, int exitAnim, Bundle activityOptions,
+                      int requestCode, boolean startActivity, boolean ignoreInterceptor) {
         this(new Uri.Builder()
                 .scheme(scheme)
                 .authority(host)
                 .path(path)
-                .build(), extras);
+                .build(), extras, routeType, flags, enterAnim, exitAnim, activityOptions,
+                requestCode, startActivity, ignoreInterceptor);
+    }
+
+    @NonNull
+    public Uri getUri() {
+        return uri;
     }
 
     public String getHost() {
@@ -65,21 +82,13 @@ public class UriRequest {
         return this.uri.getPath();
     }
 
-    @NonNull
-    public Uri getUri() {
-        return uri;
-    }
-
+    @Nullable
     public Bundle getExtras() {
         return extras;
     }
 
     public int getFlags() {
         return flags;
-    }
-
-    public void setFlags(int flags) {
-        this.flags = flags;
     }
 
     public int getEnterAnim() {
@@ -94,24 +103,12 @@ public class UriRequest {
         return activityOptions;
     }
 
-    public void setActivityOptions(Bundle activityOptions) {
-        this.activityOptions = activityOptions;
-    }
-
     public int getRouteType() {
         return routeType;
     }
 
-    public void setRouteType(int routeType) {
-        this.routeType = routeType;
-    }
-
     public boolean isStartActivity() {
         return startActivity;
-    }
-
-    public void setStartActivity(boolean startActivity) {
-        this.startActivity = startActivity;
     }
 
     public int getRequestCode() {
@@ -122,13 +119,15 @@ public class UriRequest {
         return ignoreInterceptor;
     }
 
-    public void setIgnoreInterceptor(boolean ignoreInterceptor) {
-        this.ignoreInterceptor = ignoreInterceptor;
+    public Builder newBuilder() {
+        return new Builder(this);
     }
 
     public static class Builder {
 
+        @NonNull
         private final Uri uri;
+        @NonNull
         private final Bundle extras;
         private int flags;
         private int enterAnim = -1;
@@ -137,13 +136,25 @@ public class UriRequest {
         private int routeType = RouteType.UNKNOWN;
         private boolean startActivity = true;
 
-        public Builder(Uri uri) {
+        public Builder(@NonNull Uri uri) {
             this.uri = uri;
             this.extras = new Bundle();
         }
 
         public Builder(String uri) {
             this(Uri.parse(uri));
+        }
+
+        public Builder(UriRequest request) {
+            this.uri = request.getUri();
+            Bundle extras = request.getExtras();
+            this.extras = extras != null ? extras : new Bundle();
+            this.flags = request.getFlags();
+            this.exitAnim = request.getExitAnim();
+            this.enterAnim = request.getEnterAnim();
+            this.activityOptions = request.getActivityOptions();
+            this.routeType = request.getRouteType();
+            this.startActivity = request.isStartActivity();
         }
 
         public Builder withBoolean(String key, boolean value) {
@@ -192,7 +203,7 @@ public class UriRequest {
         }
 
         public Builder withObject(String key, Object obj) {
-            SerializationService service = Router.get().route(SerializationService.class);
+            SerializationService service = Router.get().navigate(SerializationService.class);
             if (service != null) {
                 this.extras.putString(key, service.toJson(obj));
             }
@@ -200,7 +211,7 @@ public class UriRequest {
         }
 
         public Builder withObjectList(@Nullable String key, @Nullable List<?> list) {
-            SerializationService service = Router.get().route(SerializationService.class);
+            SerializationService service = Router.get().navigate(SerializationService.class);
             if (service != null) {
                 this.extras.putString(key, service.toJson(list));
             }
@@ -267,6 +278,11 @@ public class UriRequest {
             return this;
         }
 
+        public Builder withFlags(int flags) {
+            this.flags = flags;
+            return this;
+        }
+
         public Builder withTransition(int enterAnim, int exitAnim) {
             this.enterAnim = enterAnim;
             this.exitAnim = exitAnim;
@@ -299,14 +315,16 @@ public class UriRequest {
         }
 
         public UriRequest build() {
-            UriRequest request = new UriRequest(this.uri, this.extras);
-            request.flags = flags;
-            request.enterAnim = enterAnim;
-            request.exitAnim = exitAnim;
-            request.activityOptions = activityOptions;
-            request.routeType = this.routeType;
-            request.startActivity = this.startActivity;
-            return request;
+            return build(-1, false);
+        }
+
+        UriRequest build(int requestCode) {
+            return build(requestCode, false);
+        }
+
+        UriRequest build(int requestCode, boolean ignoreInterceptor) {
+            return new UriRequest(this.uri, this.extras, this.routeType, this.flags, this.enterAnim,
+                    this.exitAnim, this.activityOptions, requestCode, startActivity, ignoreInterceptor);
         }
 
         @Nullable
@@ -332,9 +350,7 @@ public class UriRequest {
         @Nullable
         public Object navigate(@Nullable Context context, int requestCode,
                                @Nullable NavigationCallback callback) {
-            UriRequest request = build();
-            request.requestCode = requestCode;
-            return Router.get().route(context, request, callback);
+            return Router.get().route(context, build(requestCode), callback);
         }
 
     }

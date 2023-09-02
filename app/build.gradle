@@ -58,8 +58,7 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
     kapt 'io.github.classops.urouter:router-compiler:1.0.1'
     annotationProcessor 'io.github.classops.urouter:router-compiler:1.0.1'
-    implementation 'io.github.classops.urouter:router:1.0.0'
-    implementation 'io.github.classops.urouter:router-annotation:1.0.0'
+    implementation 'io.github.classops.urouter:router:1.0.1'
     implementation "com.google.code.gson:gson:2.10.1"
 
     // https://mvnrepository.com/artifact/org.apache.commons/commons-lang3

@@ -1,4 +1,4 @@
-package io.github.classops.urouter;
+package io.github.classops.urouter.inject;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;

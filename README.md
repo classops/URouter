@@ -24,7 +24,7 @@
 ```groovy
 buildscript {
     dependencies {
-        classpath "io.github.classops.urouter:router-gradle-plugin:1.0.0"
+        classpath "io.github.classops.urouter:router-gradle-plugin:1.0.1"
     }
 }
 ```
@@ -37,9 +37,8 @@ plugins {
 }
 
 dependencies {
-    kapt "io.github.classops.urouter:router-compiler:1.0.0"
-    implementation "io.github.classops.urouter:router:1.0.0"
-    implementation "io.github.classops.urouter:router-annotation:1.0.0"
+    kapt "io.github.classops.urouter:router-compiler:1.0.1"
+    implementation "io.github.classops.urouter:router:1.0.1"
 }
 ```
 
@@ -62,7 +61,6 @@ Router.get().build("/test")
 private lateinit var launcher: ActivityResultLauncher<UriRequest>
 
 override fun onCreate(savedInstanceState: Bundle?) {
-    ...
     launcher = Router.get().registerForResult(
         this,
         ActivityResultContracts.StartActivityForResult(),

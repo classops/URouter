@@ -20,6 +20,25 @@ import java.util.Map;
  */
 public class Utils {
 
+    public static final class MapBuilder {
+
+        private final Map<String, Integer> map = new ArrayMap<>();
+
+        public MapBuilder add(String name, Integer type) {
+            this.map.put(name, type);
+            return this;
+        }
+
+        public Map<String, Integer> build() {
+            return this.map;
+        }
+
+    }
+
+    public static MapBuilder mapBuilder() {
+        return new MapBuilder();
+    }
+
     public static Map<String, List<String>> getQueryParameters(@NonNull Uri uri) {
         String query = uri.getEncodedQuery();
         if (query == null) {
@@ -61,7 +80,7 @@ public class Utils {
         return values.get(0);
     }
 
-    public static boolean[] toBooleanArray(@Nullable final List<String> list,boolean defaultValue) {
+    public static boolean[] toBooleanArray(@Nullable final List<String> list, boolean defaultValue) {
         if (list == null || list.isEmpty()) {
             return null;
         }
@@ -82,7 +101,7 @@ public class Utils {
 
         try {
             return Boolean.parseBoolean(str);
-        } catch (NumberFormatException e) {
+        } catch (Exception e) {
             return defaultValue;
         }
     }
@@ -177,7 +196,7 @@ public class Utils {
     }
 
     public static char toChar(@Nullable final String str, final char defaultValue) {
-        if (str == null || str.length() < 1) return defaultValue;
+        if (str == null || str.isEmpty()) return defaultValue;
 
         return str.charAt(0);
     }

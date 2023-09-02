@@ -7,8 +7,12 @@ public class ServiceLoader {
 
     // service factory 注解获取实例， interfaces 匹配
     // class 创建
-    private final ServiceFactory serviceFactory = new DefaultServiceFactory();
+    private final ServiceFactory serviceFactory;
     private final Map<Class<?>, Object> serviceMap = new ConcurrentHashMap<>();
+
+    public ServiceLoader(ServiceFactory serviceFactory) {
+        this.serviceFactory = serviceFactory;
+    }
 
     @SuppressWarnings("unchecked")
     public <T> T getService(Class<T> clazz) {
