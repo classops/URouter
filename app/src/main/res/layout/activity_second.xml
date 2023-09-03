@@ -3,11 +3,11 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="io.github.classops.urouter.demo.io.github.classops.urouter.demo.SecondActivity">
+    tools:context="io.github.classops.urouter.demo.SecondActivity">
 
     <Button
         android:id="@+id/btnClose"
-        android:text="结束返回结果"
+        android:text="close"
         android:layout_gravity="center"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />

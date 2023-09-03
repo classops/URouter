@@ -3,7 +3,6 @@ package io.github.classops.urouter.plugin
 import io.github.classops.urouter.plugin.transform.RouterRegister
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.logging.LogLevel
 import java.lang.module.ModuleDescriptor
 
 class RouterPlugin : Plugin<Project> {

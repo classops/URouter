@@ -22,10 +22,10 @@
 
 1. 项目顶级build.gradle添加
 ```groovy
-buildscript {
-    dependencies {
-        classpath "io.github.classops.urouter:router-gradle-plugin:1.0.1"
-    }
+plugins {
+    id 'com.android.application' version '7.1.1' apply false
+    id 'com.android.library' version '7.1.1' apply false
+    id 'io.github.classops.urouter' version '1.0.1' apply false
 }
 ```
 
@@ -33,7 +33,7 @@ buildscript {
 ```groovy
 plugins {
     id "kotlin-kapt"
-    id "router-plugin"
+    id 'io.github.classops.urouter'
 }
 
 dependencies {

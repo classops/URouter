@@ -30,14 +30,14 @@
 - Uri query 带入的参数，支持的参数类型 基本数据类型、Object
 - Uri 本身也传入到 Bundle 里，支持自定义处理
 
-|参数类型|Bundle|Query|
-|----|----|-----|
-|Char|Char|String|
-|CharSequence|CharSequeue|String|
-|String[]|putStringArray|String|
-|Parcelable|Parcelable|JSON String|
-|Serializable|Serializable|JSON String|
-|Object|Serializable|JSON String|
+| 参数类型         | Bundle         | Query       |
+|--------------|----------------|-------------|
+| Char         | Char           | String      |
+| CharSequence | CharSequence   | String      |
+| String[]     | putStringArray | String      |
+| Parcelable   | Parcelable     | JSON String |
+| Serializable | Serializable   | JSON String |
+| Object       | Serializable   | JSON String |
 
 
 来源：intent.extras 还是 Uri.query 传值
@@ -100,7 +100,7 @@ public final class MainActivity$$Router$$Injector implements Injector {
 
 ## router参数解析和路由
 
-APT 时，对注解的类型分析， Activity\Fragment\FragmentV4\ISerivce
+APT 时，对注解的类型分析， Activity\Fragment\FragmentV4\IService
 
 Types.isSubType
 Elements.getType()

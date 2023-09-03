@@ -1,6 +1,6 @@
 package io.github.classops.urouter.plugin
 
-const val PLUGIN_NAME = "router-plugin"
+const val PLUGIN_NAME = "URouterPlugin"
 
 const val CLASS_SUFFIX = ".class"
 

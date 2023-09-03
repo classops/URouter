@@ -31,7 +31,8 @@ class AGP7RouterRegister(private val project: Project) : RouterRegister {
     }
 
     private fun transformClasses(variant: Variant) {
-        val taskProvider = project.tasks.register("${variant.name}RouterClasses", RouterClassesTask::class.java)
+        val variantName = variant.name.replaceFirstChar { it.uppercase() }
+        val taskProvider = project.tasks.register("generate${variantName}URouterInitClass", RouterClassesTask::class.java)
         variant.artifacts.forScope(ScopedArtifacts.Scope.ALL)
             .use<RouterClassesTask>(taskProvider)
             .toTransform(

@@ -1,7 +1,8 @@
 def isAar = plugins.hasPlugin('com.android.library')
 
 task sourcesJar(type: Jar) {
-    classifier = 'sources'
+//    classifier = 'sources'
+    archiveClassifier = 'sources'
     if (isAar) {
         from android.sourceSets.main.java.srcDirs
     } else {
@@ -11,7 +12,8 @@ task sourcesJar(type: Jar) {
 
 if (!isAar) {
     task javadocJar(type: Jar) {
-        classifier = 'javadoc'
+//        classifier = 'javadoc'
+        archiveClassifier = 'javadoc'
         from javadoc.destinationDir
     }
 }
@@ -78,6 +80,16 @@ publishing {
     }
 }
 
-signing {
-    sign publishing.publications.release
+afterEvaluate {
+
+    signing {
+        publishing.publications.each { publication ->
+            println('sign publication: ' + publication.name)
+            sign publication
+        }
+//        sign publishing.publications.release
+//        sign publishing.publications.RouterPluginPluginMarkerMaven
+//        sign configurations.archives
+    }
+
 }

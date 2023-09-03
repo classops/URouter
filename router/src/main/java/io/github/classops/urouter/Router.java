@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -33,7 +34,7 @@ import java.util.concurrent.Executors;
 import io.github.classops.urouter.inject.Injector;
 import io.github.classops.urouter.interceptor.RealInterceptorChain;
 import io.github.classops.urouter.interceptor.RouteInterceptor;
-import io.github.classops.urouter.result.RouterActivityResultLauncher;
+import io.github.classops.urouter.result.RouterResultLauncher;
 import io.github.classops.urouter.route.IRouteTable;
 import io.github.classops.urouter.route.IServiceTable;
 import io.github.classops.urouter.route.RouteInfo;
@@ -131,7 +132,8 @@ public class Router {
 
     /**
      * 方法手动添加路由表信息
-     * @param path path
+     *
+     * @param path      path
      * @param routeInfo 路由信息
      */
     public void register(@NonNull String path, @NonNull RouteInfo routeInfo) {
@@ -186,18 +188,23 @@ public class Router {
         return new UriRequest.Builder(path);
     }
 
+    public UriRequest.Builder build(@NonNull Uri uri) {
+        return new UriRequest.Builder(uri);
+    }
+
     public <T> ActivityResultLauncher<UriRequest> registerForResult(@NonNull ComponentActivity activity,
                                                                     @NonNull ActivityResultContract<Intent, T> contract,
                                                                     @NonNull ActivityResultCallback<T> callback) {
 
-        return new RouterActivityResultLauncher(activity,
-                activity.registerForActivityResult(contract, callback), callback);
+        return new RouterResultLauncher(activity,
+                activity.registerForActivityResult(contract, callback),
+                callback);
     }
 
     public <T> ActivityResultLauncher<UriRequest> registerForResult(@NonNull Fragment fragment,
                                                                     @NonNull ActivityResultContract<Intent, T> contract,
                                                                     @NonNull ActivityResultCallback<T> callback) {
-        return new RouterActivityResultLauncher(fragment.requireContext(),
+        return new RouterResultLauncher(fragment.requireContext(),
                 fragment.registerForActivityResult(contract, callback),
                 callback);
     }
@@ -222,7 +229,7 @@ public class Router {
     }
 
     @Nullable
-    public <T> T navigate(Class<? extends  T> clazz) {
+    public <T> T navigate(Class<? extends T> clazz) {
         return this.route(clazz);
     }
 
@@ -395,7 +402,7 @@ public class Router {
         } else {
             extras = request.getExtras();
         }
-        return extras;
+        return extras != null ? extras : Bundle.EMPTY;
     }
 
 }

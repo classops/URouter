@@ -1,7 +1,7 @@
 pluginManagement {
     repositories {
         gradlePluginPortal()
-        mavenLocal()
+//        mavenLocal()
         google()
         mavenCentral()
     }
@@ -11,7 +11,7 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        mavenLocal()
+//        mavenLocal()
     }
 }
 rootProject.name = "router-demo"

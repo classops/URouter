@@ -4,7 +4,7 @@
     android:background="#fefefe"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="io.github.classops.urouter.demo.io.github.classops.urouter.demo.BlankFragment">
+    tools:context="io.github.classops.urouter.demo.BlankFragment">
 
     <TextView
         android:id="@+id/tvContent"

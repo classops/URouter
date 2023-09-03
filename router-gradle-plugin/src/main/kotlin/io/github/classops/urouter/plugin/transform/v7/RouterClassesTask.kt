@@ -39,8 +39,6 @@ abstract class RouterClassesTask : DefaultTask() {
 
     @TaskAction
     fun taskAction() {
-        logger.log(LogLevel.LIFECYCLE, "RouterClassesTask")
-
         val classes = ArrayList<String>()
         val jarOutput = JarOutputStream(
             BufferedOutputStream(

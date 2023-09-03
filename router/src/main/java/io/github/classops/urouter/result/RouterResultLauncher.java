@@ -30,7 +30,7 @@ import io.github.classops.urouter.interceptor.RouteInterceptor;
  * @author wangmingshuo
  * @since 2023/08/25 13:44
  */
-public class RouterActivityResultLauncher extends ActivityResultLauncher<UriRequest> {
+public class RouterResultLauncher extends ActivityResultLauncher<UriRequest> {
 
     @NonNull
     private final Context context;
@@ -41,9 +41,9 @@ public class RouterActivityResultLauncher extends ActivityResultLauncher<UriRequ
 
     private final Handler handler = new Handler(Looper.getMainLooper());
 
-    public RouterActivityResultLauncher(@NonNull Context context,
-                                        @NonNull ActivityResultLauncher<Intent> launcher,
-                                        @NonNull ActivityResultCallback<?> resultCallback) {
+    public RouterResultLauncher(@NonNull Context context,
+                                @NonNull ActivityResultLauncher<Intent> launcher,
+                                @NonNull ActivityResultCallback<?> resultCallback) {
         this.context = context;
         this.launcher = launcher;
         this.resultCallback = resultCallback;
