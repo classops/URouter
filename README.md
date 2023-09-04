@@ -1,9 +1,11 @@
 ## URouter
 
-一个简单的路由框架，特点：
+一个简单的路由框架
 
-- APG8 的支持
-- kotlin属性和setter的支持
+特点：
+
+- AGP8 的支持
+- Kotlin属性和setter的支持
 - ActivityResult的支持
 - 自动获取路由模块名，减少了配置项
 - 支持增量编译
