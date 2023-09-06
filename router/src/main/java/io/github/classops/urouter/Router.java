@@ -26,8 +26,10 @@ import androidx.fragment.app.Fragment;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -64,12 +66,10 @@ public class Router {
     }
 
     private Application context;
-    @NonNull
-    private final Map<String, RouteInfo> routeTables = new ArrayMap<>();
-    private final Map<Class<?>, Injector> injectorMap = new ArrayMap<>();
-    // 路径 到 接口Class 的映射
-    private final Map<String, RouteInfo> serviceMap = new ArrayMap<>();
-    private final List<Interceptor> interceptors = new ArrayList<>();
+    private final Map<String, RouteInfo> routeTables = Collections.synchronizedMap(new ArrayMap<>());
+    private final Map<Class<?>, Injector> injectorMap = Collections.synchronizedMap(new ArrayMap<>());
+    private final Map<String, RouteInfo> serviceMap = Collections.synchronizedMap(new ArrayMap<>());
+    private final List<Interceptor> interceptors = new CopyOnWriteArrayList<>();
     private final ServiceLoader serviceLoader = new ServiceLoader(new DefaultServiceFactory());
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Executor executor;
@@ -136,6 +136,7 @@ public class Router {
      * @param path      path
      * @param routeInfo 路由信息
      */
+    @AnyThread
     public void register(@NonNull String path, @NonNull RouteInfo routeInfo) {
         routeTables.put(path, routeInfo);
         if (routeInfo.getType() == RouteType.SERVICE) {
@@ -143,10 +144,12 @@ public class Router {
         }
     }
 
+    @AnyThread
     public void registerTable(@NonNull IRouteTable route) {
         route.load(routeTables);
     }
 
+    @AnyThread
     public void registerService(@NonNull IServiceTable route) {
         route.load(serviceMap);
     }
