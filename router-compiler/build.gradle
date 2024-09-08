@@ -5,7 +5,7 @@ plugins {
 }
 
 group 'io.github.classops.urouter'
-version '1.0.1'
+version '1.0.2'
 
 apply from: '../maven-publish.gradle'
 
@@ -27,7 +27,7 @@ dependencies {
     // https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
     implementation 'org.apache.commons:commons-lang3:3.12.0'
     implementation 'com.squareup:javapoet:1.13.0'
-    implementation 'io.github.classops.urouter:router-core:1.0.1'
+    implementation 'io.github.classops.urouter:router-core:1.0.2'
 }
 
 test {

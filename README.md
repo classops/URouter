@@ -27,7 +27,7 @@
 plugins {
     id 'com.android.application' version '7.1.1' apply false
     id 'com.android.library' version '7.1.1' apply false
-    id 'io.github.classops.urouter' version '1.0.1' apply false
+    id 'io.github.classops.urouter' version '1.0.2' apply false
 }
 ```
 
@@ -39,26 +39,57 @@ plugins {
 }
 
 dependencies {
-    kapt "io.github.classops.urouter:router-compiler:1.0.1"
-    implementation "io.github.classops.urouter:router:1.0.1"
+    kapt "io.github.classops.urouter:router-compiler:1.0.2"
+    implementation "io.github.classops.urouter:router:1.0.2"
 }
 ```
 
-3. 项目中使用
+3. Application中初始化
+
 ```kotlin
-// Application 里初始化
-Router.get().init(this)
+class App : Application() {
 
-// 在需要路由的 Activity/Fragment 上添加注解
-@Route(path = "/test")
-
-// 跳转方法
-Router.get().build("/test")
-    .withString("toast", "hello world")
-    .navigate(this)
+    override fun onCreate() {
+        super.onCreate()
+        Router.get().init(this)
+    }
+}
 ```
 
-**URouter 支持 ActivityResult 方式 跳转页面处理结果**
+4. 项目中使用
+```kotlin
+// 在需要路由的 Activity/Fragment 上添加注解
+@Route(path = "/home")
+class MainActivity : AppCompatActivity() {
+
+    @Param
+    var toast: String? = ""
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+        // 解析参数到 toast 字段
+        Router.get().inject(this)
+
+        // 点击跳转新页面
+        val btnNav = findViewById<Button>(R.id.btnNav)
+        btnNav.setOnClickListener {
+            Router.get().build("/home")
+                .withString("toast", "hello world")
+                .navigate(this)
+        }
+
+        // 接收 toast 参数
+        if (toast?.isNotEmpty() == true) {
+            Toast.makeText(this, toast, Toast.LENGTH_LONG)
+                .show()
+        }
+    }
+}
+```
+
+#### URouter 支持 ActivityResult 方式 跳转页面处理结果
+
 ```kotlin
 private lateinit var launcher: ActivityResultLauncher<UriRequest>
 

@@ -21,10 +21,6 @@ class AGP4RouterRegister(private val project: Project) : RouterRegister {
 
     override fun registerTransform() {
         extension.registerTransform(transform)
-        project.extensions
-        project.tasks.withType(JavaCompile::class.java) {
-            it.options
-        }
     }
 
     override val pluginVersion: String?

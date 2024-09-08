@@ -18,7 +18,7 @@ class TestRouterLoad {
                 "$ROUTER_PKG.TestUriInjector",
                 "$ROUTER_PKG.route.IRouteTable",
         )
-        val out = RouterInitGen.addRouteClasses(classes)
+        val out = RouterInitGen.createRouteInitClass(classes)
 
         val f = File("./rouder.class")
         f.outputStream().use {

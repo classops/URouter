@@ -84,7 +84,7 @@ class RouterTransformImpl4(logger: Logger) : BaseTransform(logger) {
             }
         } else {
             logger.log(LogLevel.INFO, "generate route init class.")
-            val out = RouterInitGen.addRouteClasses(
+            val out = RouterInitGen.createRouteInitClass(
                 classes.filter { it.startsWith(GENERATED_ROUTE) }
                     .map { it.removeSuffix(".class").replace("/", ".") }
             )

@@ -5,7 +5,7 @@ plugins {
 }
 
 group 'io.github.classops.urouter'
-version '1.0.1'
+version '1.0.2'
 
 apply from: '../maven-publish.gradle'
 

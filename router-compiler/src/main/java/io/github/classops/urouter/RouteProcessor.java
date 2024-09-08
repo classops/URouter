@@ -8,6 +8,7 @@ import io.github.classops.urouter.route.RouteInfo;
 import io.github.classops.urouter.route.RouteType;
 import io.github.classops.urouter.utils.MemberUtils;
 import com.squareup.javapoet.*;
+import io.github.classops.urouter.utils.Utils;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.processing.*;
@@ -87,6 +88,7 @@ public class RouteProcessor extends BaseProcessor {
                 e.printStackTrace();
             }
             routes.put(route.path(), new RouteItem(routeType, typeElement, paramsType));
+
         }
 
         try {
@@ -598,7 +600,8 @@ public class RouteProcessor extends BaseProcessor {
                     buildParamsMap(routeItem.getParamsType()));
         }
         MethodSpec methodSpec = methodSpecBuilder.build();
-        TypeSpec typeSpec = TypeSpec.classBuilder(ROUTER + CLASS_SEP + mProjectName)
+        String typeName = Utils.getValidTypeName(mProjectName);
+        TypeSpec typeSpec = TypeSpec.classBuilder(ROUTER + CLASS_SEP + typeName)
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .addSuperinterface(routeTableInterface)
                 .addMethod(methodSpec)
@@ -635,7 +638,8 @@ public class RouteProcessor extends BaseProcessor {
             }
         }
         MethodSpec methodSpec = methodSpecBuilder.build();
-        TypeSpec typeSpec = TypeSpec.classBuilder(ROUTER + CLASS_SEP + "Service" + CLASS_SEP + mProjectName)
+        String typeName = Utils.getValidTypeName(mProjectName);
+        TypeSpec typeSpec = TypeSpec.classBuilder(ROUTER + CLASS_SEP + "Service" + CLASS_SEP + typeName)
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .addSuperinterface(routeTableInterface)
                 .addMethod(methodSpec)

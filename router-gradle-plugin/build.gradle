@@ -5,8 +5,8 @@ plugins {
     id 'signing'
 }
 
-group 'io.github.classops.urouter'
-version '1.0.1'
+group = 'io.github.classops.urouter'
+version = '1.0.2'
 
 gradlePlugin {
     plugins {

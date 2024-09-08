@@ -104,7 +104,7 @@ abstract class RouterClassesTask : DefaultTask() {
         }
 
         // 添加 RouteInit.class
-        genTableClass(jarOutput, classes)
+        genRouteInitClass(jarOutput, classes)
 
         jarOutput.close()
 
@@ -114,12 +114,12 @@ abstract class RouterClassesTask : DefaultTask() {
     /**
      * 生成 RouteInit.class
      *
-     * @param classes com/xxx/xxx/XXX 形式，没有.class后缀
+     * @param classes 各模块路由表，com/xxx/xxx/XXX 形式，没有.class后缀
      */
-    private fun genTableClass(jarOutput: JarOutputStream, classes: List<String>) {
+    private fun genRouteInitClass(jarOutput: JarOutputStream, classes: List<String>) {
         jarOutput.putNextEntry(JarEntry("$ROUTER_ROUTE_INIT.class"))
         jarOutput.write(
-            RouterInitGen.addRouteClasses(classes)
+            RouterInitGen.createRouteInitClass(classes)
         )
     }
 

@@ -10,11 +10,15 @@ import java.io.InputStream
 object RouterInitGen {
 
     /**
-     * 生成 class
+     * 生成 RouteInit.class
+     *
+     * 1. 创建类，public class RouteInit
+     * 2. 创建方法，public static void load(Router router);
+     * 3. 注册路由表类，router.register("xxx");
      *
      * @param classes com.xxx.xxx.XXX 形式，没有.class后缀
      */
-    fun addRouteClasses(classes: List<String>): ByteArray {
+    fun createRouteInitClass(classes: List<String>): ByteArray {
         val cw = ClassWriter(ClassWriter.COMPUTE_FRAMES or ClassWriter.COMPUTE_MAXS)
         val cv = object : ClassVisitor(Opcodes.ASM5, cw) {
 

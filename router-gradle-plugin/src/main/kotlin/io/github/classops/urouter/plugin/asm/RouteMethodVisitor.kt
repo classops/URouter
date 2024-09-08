@@ -4,7 +4,10 @@ import io.github.classops.urouter.plugin.transform.RouterInitGen
 import org.objectweb.asm.MethodVisitor
 
 /**
- * RouteInit.load 加载路由类的增量修改
+ * RouteInit.load(Router) 加载路由类的增量修改
+ *
+ * 因为只有 router.register("xxx"); 方法，所以 忽略 所有，
+ * 使用 visitLdcInsn 获取 “xxx”，直接插入或忽略
  */
 class RouteMethodVisitor(
     api: Int,
