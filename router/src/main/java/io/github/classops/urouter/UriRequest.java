@@ -119,12 +119,14 @@ public class UriRequest {
         return ignoreInterceptor;
     }
 
-    public Builder newBuilder() {
-        return new Builder(this);
+    public Builder newBuilder(@NonNull Router router) {
+        return new Builder(router, this);
     }
 
     public static class Builder {
 
+        private final Router router;
+        private final SerializationService service;
         @NonNull
         private final Uri uri;
         @NonNull
@@ -137,15 +139,27 @@ public class UriRequest {
         private boolean startActivity = true;
 
         public Builder(@NonNull Uri uri) {
+            this(Router.get(), uri);
+        }
+
+        public Builder(@NonNull String uri) {
+            this(Uri.parse(uri));
+        }
+
+        public Builder(@NonNull Router router, @NonNull Uri uri) {
+            this.router = router;
+            this.service = router.navigate(SerializationService.class);
             this.uri = uri;
             this.extras = new Bundle();
         }
 
-        public Builder(String uri) {
-            this(Uri.parse(uri));
+        public Builder(@NonNull UriRequest request) {
+            this(Router.get(), request);
         }
 
-        public Builder(UriRequest request) {
+        public Builder(@NonNull Router router, @NonNull UriRequest request) {
+            this.router = router;
+            this.service = router.navigate(SerializationService.class);
             this.uri = request.getUri();
             Bundle extras = request.getExtras();
             this.extras = extras != null ? extras : new Bundle();
@@ -203,7 +217,7 @@ public class UriRequest {
         }
 
         public Builder withObject(String key, Object obj) {
-            SerializationService service = Router.get().navigate(SerializationService.class);
+            SerializationService service = router.navigate(SerializationService.class);
             if (service != null) {
                 this.extras.putString(key, service.toJson(obj));
             }
@@ -211,7 +225,7 @@ public class UriRequest {
         }
 
         public Builder withObjectList(@Nullable String key, @Nullable List<?> list) {
-            SerializationService service = Router.get().navigate(SerializationService.class);
+            SerializationService service = this.router.navigate(SerializationService.class);
             if (service != null) {
                 this.extras.putString(key, service.toJson(list));
             }
@@ -350,7 +364,7 @@ public class UriRequest {
         @Nullable
         public Object navigate(@Nullable Context context, int requestCode,
                                @Nullable NavigationCallback callback) {
-            return Router.get().route(context, build(requestCode), callback);
+            return router.route(context, build(requestCode), callback);
         }
 
     }

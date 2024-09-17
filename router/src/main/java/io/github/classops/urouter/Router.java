@@ -70,7 +70,7 @@ public class Router {
     private final Map<Class<?>, Injector> injectorMap = Collections.synchronizedMap(new ArrayMap<>());
     private final Map<String, RouteInfo> serviceMap = Collections.synchronizedMap(new ArrayMap<>());
     private final List<Interceptor> interceptors = new CopyOnWriteArrayList<>();
-    private final ServiceLoader serviceLoader = new ServiceLoader(new DefaultServiceFactory());
+    private ServiceLoader serviceLoader;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Executor executor;
 
@@ -92,6 +92,7 @@ public class Router {
 
     public void init(@NonNull Application application) {
         this.context = application;
+        this.serviceLoader = new ServiceLoader(new DefaultServiceFactory(context));
         // 初始化工作
         loadRouter();
     }
@@ -252,7 +253,7 @@ public class Router {
         try {
             List<Interceptor> interceptors = new ArrayList<>(Router.this.interceptors);
             interceptors.add(new RouteInterceptor(context, callback));
-            Interceptor.Chain chain = new RealInterceptorChain(0, interceptors, request);
+            Interceptor.Chain chain = new RealInterceptorChain(this, 0, interceptors, request);
             chain.proceed(request);
         } catch (Exception e) {
             e.printStackTrace();

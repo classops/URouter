@@ -7,7 +7,7 @@ public interface Interceptor {
 
     @WorkerThread
     @Nullable
-    Object intercept(Chain chain) throws Exception;
+    Object intercept(final Router router, Chain chain) throws Exception;
 
     interface Chain {
 

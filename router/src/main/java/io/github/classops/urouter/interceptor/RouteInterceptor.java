@@ -21,7 +21,7 @@ public class RouteInterceptor implements Interceptor {
 
     @Nullable
     @Override
-    public Object intercept(Chain chain) throws Exception {
-        return Router.get().route(context, chain.request(), navigationCallback, false);
+    public Object intercept(final Router router, Chain chain) throws Exception {
+        return router.route(context, chain.request(), navigationCallback, false);
     }
 }

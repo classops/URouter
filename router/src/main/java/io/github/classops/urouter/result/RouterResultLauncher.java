@@ -35,6 +35,8 @@ public class RouterResultLauncher extends ActivityResultLauncher<UriRequest> {
     @NonNull
     private final Context context;
     @NonNull
+    private final Router router;
+    @NonNull
     private final ActivityResultLauncher<Intent> launcher;
     @NonNull
     private final ActivityResultCallback<?> resultCallback;
@@ -45,6 +47,7 @@ public class RouterResultLauncher extends ActivityResultLauncher<UriRequest> {
                                 @NonNull ActivityResultLauncher<Intent> launcher,
                                 @NonNull ActivityResultCallback<?> resultCallback) {
         this.context = context;
+        this.router = Router.get();
         this.launcher = launcher;
         this.resultCallback = resultCallback;
     }
@@ -52,7 +55,7 @@ public class RouterResultLauncher extends ActivityResultLauncher<UriRequest> {
     @Override
     public void launch(final UriRequest input, @Nullable final ActivityOptionsCompat options) {
         // 执行异步的拦截器，线程池执行 拦截器
-        Router.get().getExecutor().execute(() -> launchRequest(input, options));
+        router.getExecutor().execute(() -> launchRequest(input, options));
     }
 
     @MainThread
@@ -71,13 +74,13 @@ public class RouterResultLauncher extends ActivityResultLauncher<UriRequest> {
     private void launchRequest(UriRequest input, @Nullable final ActivityOptionsCompat options) {
         try {
             // 执行拦截器
-            List<Interceptor> interceptors = new ArrayList<>(Router.get().getInterceptors());
+            List<Interceptor> interceptors = new ArrayList<>(router.getInterceptors());
             interceptors.add(new RouteInterceptor(context, null));
             // 不启动Activity，仅处理最后结果
-            UriRequest request = input.newBuilder()
+            UriRequest request = input.newBuilder(router)
                     .routeOnly()
                     .build();
-            Interceptor.Chain chain = new RealInterceptorChain(0, interceptors, request);
+            Interceptor.Chain chain = new RealInterceptorChain(router, 0, interceptors, request);
             // 拦截
             final Intent intent = (Intent) chain.proceed(request);
             if (intent == null) {

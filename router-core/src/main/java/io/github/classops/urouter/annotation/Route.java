@@ -9,8 +9,6 @@ public @interface Route {
 
     String path() default "";
 
-    String[] alias() default {};
-
     int flag() default 0;
 
 }

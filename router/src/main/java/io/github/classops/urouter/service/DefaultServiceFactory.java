@@ -7,9 +7,14 @@ import androidx.annotation.NonNull;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-import io.github.classops.urouter.Router;
-
 public class DefaultServiceFactory implements ServiceFactory {
+
+    @NonNull
+    private final Context context;
+
+    public DefaultServiceFactory(@NonNull Context context) {
+        this.context = context;
+    }
 
     @NonNull
     @Override
@@ -18,7 +23,7 @@ public class DefaultServiceFactory implements ServiceFactory {
             // context constructor
             Constructor<?> constructor = getConstructor(clazz, Context.class);
             if (constructor != null) {
-                return constructor.newInstance(Router.get().getContext());
+                return constructor.newInstance(context);
             }
             Constructor<?> constructor2 = getConstructor(clazz);
             if (constructor2 != null) {
