@@ -79,7 +79,7 @@ public class RouteProcessor extends BaseProcessor {
                 continue;
             }
 
-            // 获取参数信息，字段名 和 类型
+            // 获取参数信息 字段名和类型
             List<? extends Element> members = mElementUtils.getAllMembers(typeElement);
             Map<String, Integer> paramsType = new HashMap<>();
             try {
@@ -182,7 +182,7 @@ public class RouteProcessor extends BaseProcessor {
     private FieldType getFieldType(VariableElement element) {
         if (MemberUtils.isPublic(element)) return FieldType.FIELD;
 
-        // 获取字段的getter\setter方法，判断 直接赋值还是通过setter赋值
+        // 获取字段的getter/setter方法 判断直接赋值还是setter
         String fieldName = element.getSimpleName().toString();
         String name = fieldName.substring(0, 1).toUpperCase() + (fieldName.length() > 1 ? fieldName.substring(1) : "");
         String getterName = "get" + name;
@@ -310,7 +310,7 @@ public class RouteProcessor extends BaseProcessor {
                 if (mTypeUtils.isSubtype(typeMirror, mParcelableType)) {
                     return ParamType.PARCELABLE;
                 } else if (mTypeUtils.isSubtype(typeMirror, mSerializableType) &&
-                    !mTypeUtils.isAssignable(typeMirror, mListType)) {
+                        !mTypeUtils.isAssignable(typeMirror, mListType)) {
                     // 忽略ArrayList类型
                     return ParamType.SERIALIZABLE;
                 } else {
@@ -438,20 +438,20 @@ public class RouteProcessor extends BaseProcessor {
 
             case ParamType.PARCELABLE:
                 builder.addStatement("extras.putParcelable($S, ($T) service.parseObject(uri.getQueryParameter($S), new $T() {}.getType()))",
-                                fieldInfo.paramName,
-                                ClassName.get("android.os", "Parcelable"),
-                                fieldInfo.paramName,
-                                ParameterizedTypeName.get(ClassName.get(ROUTER_PKG + ".inject","TypeToken"),
-                                        TypeName.get(fieldInfo.element.asType())));
+                        fieldInfo.paramName,
+                        ClassName.get("android.os", "Parcelable"),
+                        fieldInfo.paramName,
+                        ParameterizedTypeName.get(ClassName.get(ROUTER_PKG + ".inject","TypeToken"),
+                                TypeName.get(fieldInfo.element.asType())));
                 break;
 
             case ParamType.SERIALIZABLE:
                 builder.addStatement("extras.putSerializable($S, ($T) service.parseObject(uri.getQueryParameter($S), new $T() {}.getType()))",
-                                fieldInfo.paramName,
-                                Serializable.class,
-                                fieldInfo.paramName,
-                                ParameterizedTypeName.get(ClassName.get(ROUTER_PKG + ".inject","TypeToken"),
-                                        TypeName.get(fieldInfo.element.asType())));
+                        fieldInfo.paramName,
+                        Serializable.class,
+                        fieldInfo.paramName,
+                        ParameterizedTypeName.get(ClassName.get(ROUTER_PKG + ".inject","TypeToken"),
+                                TypeName.get(fieldInfo.element.asType())));
                 break;
 
             case ParamType.CHARSEQUENCE:
@@ -630,7 +630,6 @@ public class RouteProcessor extends BaseProcessor {
             //  判断是否接口
             for (TypeMirror i : interfaces) {
                 if (mTypeUtils.isSubtype(i, serviceType)) {
-                    // 实现的接口
                     methodSpecBuilder.addStatement("table.put($S, $T.build((byte) $L, $N.class, $N))",
                             i.toString(), RouteInfo.class, routeItem.getType(), routeItem.getTypeElement().getQualifiedName(),
                             buildParamsMap(routeItem.getParamsType()));

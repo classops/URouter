@@ -1,7 +1,9 @@
+@file:Suppress("DEPRECATION")
+
 package io.github.classops.urouter.plugin.transform.v4
 
 import com.android.build.api.transform.*
-import com.android.build.api.transform.QualifiedContent.DefaultContentType
+import com.android.build.api.transform.QualifiedContent
 import io.github.classops.urouter.plugin.CLASS_SUFFIX
 import io.github.classops.urouter.plugin.jar.getClasses
 import org.gradle.api.logging.LogLevel
@@ -16,7 +18,7 @@ abstract class BaseTransform(val logger: Logger) : Transform() {
 
     override fun getInputTypes(): MutableSet<QualifiedContent.ContentType> {
         // TransformManager.CONTENT_CLASS
-        return mutableSetOf(DefaultContentType.CLASSES)
+        return mutableSetOf(QualifiedContent.DefaultContentType.CLASSES)
     }
 
     override fun getScopes(): MutableSet<in QualifiedContent.Scope> {

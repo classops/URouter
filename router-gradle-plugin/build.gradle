@@ -1,12 +1,10 @@
 plugins {
     id 'java-gradle-plugin'
-    id 'org.jetbrains.kotlin.jvm' version '1.6.21'
-    id 'maven-publish'
-    id 'signing'
+    id 'org.jetbrains.kotlin.jvm' version '1.9.25'
+    id "com.vanniktech.maven.publish" version "0.34.0"
+//    id 'maven-publish'
+//    id 'signing'
 }
-
-group = 'io.github.classops.urouter'
-version = '1.0.2'
 
 gradlePlugin {
     plugins {
@@ -15,20 +13,24 @@ gradlePlugin {
             id = 'io.github.classops.urouter'
             implementationClass = 'io.github.classops.urouter.plugin.RouterPlugin'
         }
+
     }
 }
 
-apply from: '../maven-publish.gradle'
-
+apply from: '../sonatype-maven-publish.gradle'
 
 repositories {
     mavenCentral()
     google()
 }
 
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
     kotlinOptions {
-        freeCompilerArgs = ['-Xjvm-default=enable'] //enable or compatibility
         jvmTarget = "1.8"
     }
 }
@@ -36,18 +38,16 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
 dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.21"
-//    compileOnly 'com.android.tools.build:gradle:7.4.2'
-//    implementation 'com.android.tools.build:gradle-api:7.4.2'
+//    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.25"
 
-//    compileOnly 'com.android.tools.build:gradle:4.2.1'
-//    implementation 'com.android.tools.build:gradle-api:4.2.1'
-
-    compileOnly 'com.android.tools.build:gradle:8.0.0'
+    // AGP 4.21, 7.4.2, 8.0.0
+    compileOnly 'com.android.tools.build:gradle:7.2.2'
+    // gradle
 //    implementation 'com.android.tools.build:gradle-api:8.0.0'
-//    gradleApi()
-    implementation 'org.apache.maven:maven-artifact:3.6.3'
+    gradleApi()
+    implementation 'org.apache.maven:maven-artifact:3.9.11'
     implementation 'org.ow2.asm:asm:9.4'
+    implementation "com.squareup:javapoet:1.13.0"
 }
 
 test {
@@ -60,40 +60,4 @@ jar {
 
 tasks.withType(GenerateModuleMetadata) {
     enabled = false
-}
-
-publishing {
-    afterEvaluate {
-        publications {
-            RouterPluginPluginMarkerMaven(MavenPublication) {
-                pom {
-                    name = project.name
-                    description = 'URouter'
-                    url = 'https://github.com/classops/URouter'
-
-                    licenses {
-                        license {
-                            name = 'The Apache License, Version 2.0'
-                            url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                        }
-                    }
-
-                    developers {
-                        developer {
-                            id = 'classops'
-                            name = 'ClassOps'
-                            email = 'ClassOps@163.com'
-                        }
-                    }
-
-                    // scm
-                    scm {
-                        connection = 'https://github.com/classops/URouter.git'
-                        developerConnection = 'https://github.com/classops/URouter.git'
-                        url = 'https://github.com/classops/URouter'
-                    }
-                }
-            }
-        }
-    }
 }

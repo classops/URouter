@@ -52,7 +52,6 @@ class MainActivity : BaseActivity() {
 
         binding.btnTestApp.setOnClickListener {
             routeToTest()
-
         }
 
         binding.btnTestA.setOnClickListener {

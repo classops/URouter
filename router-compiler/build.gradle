@@ -1,13 +1,11 @@
 plugins {
     id 'java-library'
-    id 'maven-publish'
-    id 'signing'
+//    id 'maven-publish'
+//    id 'signing'
+    id "com.vanniktech.maven.publish" version "0.34.0"
 }
 
-group 'io.github.classops.urouter'
-version '1.0.2'
-
-apply from: '../maven-publish.gradle'
+apply from: '../sonatype-maven-publish.gradle'
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
@@ -15,19 +13,27 @@ targetCompatibility = JavaVersion.VERSION_1_8
 repositories {
     mavenCentral()
     google()
-    mavenLocal()
+    // Snapshots
+    maven {
+        name = 'Central Portal Snapshots'
+        url = 'https://central.sonatype.com/repository/maven-snapshots/'
+        content {
+            includeGroupByRegex("io.github.classops.*")
+        }
+    }
+//    mavenLocal()
 }
 
 dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
     // https://mvnrepository.com/artifact/com.google.auto.service/auto-service
-    annotationProcessor 'com.google.auto.service:auto-service:1.0.1'
-    compileOnly 'com.google.auto.service:auto-service-annotations:1.0.1'
+    annotationProcessor 'com.google.auto.service:auto-service:1.1.1'
+    compileOnly 'com.google.auto.service:auto-service-annotations:1.1.1'
     // https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
     implementation 'org.apache.commons:commons-lang3:3.12.0'
     implementation 'com.squareup:javapoet:1.13.0'
-    implementation 'io.github.classops.urouter:router-core:1.0.2'
+    implementation 'io.github.classops.urouter:router-core:1.1.0-SNAPSHOT'
 }
 
 test {

@@ -8,7 +8,7 @@ import java.lang.reflect.Type;
 /**
  * 对象JSON序列化的Service
  *
- * @author wangmingshuo
+ * @author classops
  * @since 2023/04/07 10:06
  */
 public interface SerializationService extends IService {

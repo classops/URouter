@@ -8,7 +8,7 @@ import java.lang.reflect.Type
 /**
  * GsonService
  *
- * @author wangmingshuo
+ * @author classops
  * @since 2023/04/21 16:27
  */
 @Route(path = "serialization_service")

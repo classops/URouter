@@ -27,7 +27,7 @@ import io.github.classops.urouter.interceptor.RouteInterceptor;
 /**
  * RouterActivityResultLauncher
  *
- * @author wangmingshuo
+ * @author classops
  * @since 2023/08/25 13:44
  */
 public class RouterResultLauncher extends ActivityResultLauncher<UriRequest> {

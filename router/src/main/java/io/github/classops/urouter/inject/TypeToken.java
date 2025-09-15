@@ -6,7 +6,7 @@ import java.lang.reflect.Type;
 /**
  * TypeToken，反射获取类型
  *
- * @author wangmingshuo
+ * @author classops
  * @since 2023/04/21 14:38
  */
 public abstract class TypeToken<T> {

@@ -33,6 +33,7 @@ class RouterTransformImpl4(logger: Logger) : BaseTransform(logger) {
         this.deletedClasses.add(className)
     }
 
+    @Suppress("DEPRECATION")
     override fun transform(
         context: Context?,
         inputs: MutableCollection<TransformInput>,

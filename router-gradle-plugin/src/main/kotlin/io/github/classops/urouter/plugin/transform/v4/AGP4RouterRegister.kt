@@ -5,7 +5,6 @@ import io.github.classops.urouter.plugin.transform.RouterRegister
 import org.gradle.api.Project
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.logging.Logger
-import org.gradle.api.tasks.compile.JavaCompile
 import java.lang.reflect.Modifier
 
 class AGP4RouterRegister(private val project: Project) : RouterRegister {
@@ -20,6 +19,7 @@ class AGP4RouterRegister(private val project: Project) : RouterRegister {
     }
 
     override fun registerTransform() {
+        @Suppress("DEPRECATION")
         extension.registerTransform(transform)
     }
 

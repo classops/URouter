@@ -6,7 +6,7 @@ import io.github.classops.urouter.Router
 /**
  * Application
  *
- * @author wangmingshuo
+ * @author classops
  * @since 2023/04/26 16:04
  */
 class App : MultiDexApplication() {

@@ -5,7 +5,7 @@ import androidx.annotation.MainThread;
 /**
  * 导航回调
  *
- * @author wangmingshuo
+ * @author classops
  * @since 2023/04/20 09:47
  */
 public interface NavigationCallback {

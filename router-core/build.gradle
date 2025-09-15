@@ -1,19 +1,26 @@
 plugins {
     id 'java-library'
-    id 'maven-publish'
-    id 'signing'
+//    id 'maven-publish'
+//    id 'signing'
+    id "com.vanniktech.maven.publish" version "0.34.0"
 }
 
-group 'io.github.classops.urouter'
-version '1.0.2'
-
-apply from: '../maven-publish.gradle'
+apply from: '../sonatype-maven-publish.gradle'
 
 sourceCompatibility = JavaVersion.VERSION_1_7
 targetCompatibility = JavaVersion.VERSION_1_7
 
 repositories {
     mavenCentral()
+
+    // Snapshots
+    maven {
+        name = 'Central Portal Snapshots'
+        url = 'https://central.sonatype.com/repository/maven-snapshots/'
+        content {
+            includeGroupByRegex("io.github.classops.*")
+        }
+    }
 }
 
 dependencies {

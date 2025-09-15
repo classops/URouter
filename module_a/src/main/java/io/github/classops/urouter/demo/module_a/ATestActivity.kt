@@ -34,7 +34,7 @@ class ATestActivity : AppCompatActivity() {
         Router.get().inject(this)
         testService.toast("$toast:$prog")
         val btnClose = findViewById<Button>(R.id.btnClose)
-        btnClose.setOnClickListener { v: View? ->
+        btnClose.setOnClickListener { _ ->
             val result = Intent()
             result.putExtra("text", "123")
             setResult(Activity.RESULT_OK, result)

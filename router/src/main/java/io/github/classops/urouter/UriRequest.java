@@ -18,7 +18,7 @@ import io.github.classops.urouter.service.SerializationService;
 /**
  * 路由请求
  *
- * @author wangmingshuo
+ * @author classops
  * @since 2022/11/17 19:26
  */
 public class UriRequest {

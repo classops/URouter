@@ -8,7 +8,7 @@ import io.github.classops.urouter.route.RouteInfo;
 /**
  * 参数注入接口
  *
- * @author wangmingshuo
+ * @author classops
  * @since 2022/12/13 16:51
  */
 public interface Injector {

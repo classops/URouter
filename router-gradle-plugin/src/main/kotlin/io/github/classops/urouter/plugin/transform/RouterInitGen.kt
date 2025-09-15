@@ -10,7 +10,7 @@ import java.io.InputStream
 object RouterInitGen {
 
     /**
-     * 生成 RouteInit.class
+     * 生成 io.github.classops.urouter.init.RouteInit.class
      *
      * 1. 创建类，public class RouteInit
      * 2. 创建方法，public static void load(Router router);

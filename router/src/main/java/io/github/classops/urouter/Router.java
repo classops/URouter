@@ -47,7 +47,7 @@ import io.github.classops.urouter.service.ServiceLoader;
 /**
  * Router
  *
- * @author wangmingshuo
+ * @author classops
  * @since 2022/11/17 19:12
  */
 public class Router {
