@@ -25,8 +25,8 @@
 1. 项目顶级build.gradle添加
 ```groovy
 plugins {
-    id 'com.android.application' version '7.1.1' apply false
-    id 'com.android.library' version '7.1.1' apply false
+    id 'com.android.application' version '8.1.4' apply false
+    id 'com.android.library' version '8.1.4' apply false
     id 'io.github.classops.urouter' version '1.1.0' apply false
 }
 ```
@@ -39,8 +39,8 @@ plugins {
 }
 
 dependencies {
-    kapt "io.github.classops.urouter:router-compiler:1.0.2"
-    implementation "io.github.classops.urouter:router:1.0.2"
+    kapt "io.github.classops.urouter:router-compiler:1.1.0"
+    implementation "io.github.classops.urouter:router:1.1.0"
 }
 ```
 

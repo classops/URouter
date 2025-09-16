@@ -35,6 +35,6 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
-    annotationProcessor 'io.github.classops.urouter:router-compiler:1.1.0-SNAPSHOT'
-    implementation 'io.github.classops.urouter:router:1.1.0-SNAPSHOT'
+    annotationProcessor 'io.github.classops.urouter:router-compiler:1.1.0'
+    implementation 'io.github.classops.urouter:router:1.1.0'
 }

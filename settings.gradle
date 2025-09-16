@@ -27,7 +27,7 @@ dependencyResolutionManagement {
                 includeGroupByRegex("io.github.classops.*")
             }
         }
-//        mavenLocal()
+        mavenLocal()
     }
 }
 rootProject.name = "router-demo"
